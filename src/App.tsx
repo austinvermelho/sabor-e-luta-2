@@ -25,6 +25,7 @@ import {
   getProjectSupportConfig,
   getAdminPin,
   setAdminPin,
+  clearLocalCacheAndReload,
   SUGGESTED_EXAMPLES
 } from './services/storage';
 import { Header } from './components/Header';
@@ -702,10 +703,19 @@ export default function App() {
 
             <a
               href="mailto:saboreluta@gmail.com"
-              className="hover:text-rose-950 transition-colors flex items-center gap-1 font-medium text-rose-900"
+              className="hover:text-rose-950 font-medium transition-colors flex items-center gap-1 text-rose-900 dark:text-rose-400"
             >
               <span>Contato: saboreluta@gmail.com</span>
             </a>
+
+            <button
+              onClick={clearLocalCacheAndReload}
+              className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors inline-flex items-center gap-1 text-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#d32f2f] rounded"
+              title="Limpar o armazenamento local e buscar os dados mais recentes do servidor"
+            >
+              <RotateCcw className="w-3 h-3 text-[#d32f2f]" aria-hidden="true" />
+              <span>Sincronizar / Limpar Cache</span>
+            </button>
 
             {/* Discreet Curator Entry */}
             {!isAdmin ? (

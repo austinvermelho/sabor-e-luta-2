@@ -89,15 +89,35 @@ export const saveEstablishments = (items: Establishment[]): void => {
   }).catch(() => {});
 };
 
+export const clearLocalCacheAndReload = (): void => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    console.error('Erro ao limpar cache local:', err);
+  }
+  window.location.href = window.location.origin + '?v=' + Date.now();
+};
+
 // Async fetch from central API server (for multi-device / multi-user persistence)
 export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
   try {
     const res = await fetch('/api/establishments');
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        saveEstablishmentsLocally(data);
-        return data;
+      if (Array.isArray(data)) {
+        if (data.length > 0) {
+          saveEstablishmentsLocally(data);
+          return data;
+        } else {
+          // If server database is empty, seed defaults and sync
+          saveEstablishmentsLocally(SUGGESTED_EXAMPLES);
+          fetch('/api/establishments/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(SUGGESTED_EXAMPLES),
+          }).catch(() => {});
+          return SUGGESTED_EXAMPLES;
+        }
       }
     }
   } catch (err) {
