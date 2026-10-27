@@ -205,16 +205,19 @@ export default function App() {
     let updated: Establishment[];
     if (editingItem) {
       updated = updateEstablishment(data);
-      showToast(`"${data.name}" atualizado.`);
+      showToast(`"${data.name}" atualizado com sucesso.`);
     } else {
       updated = addEstablishment(data);
       if (isAdmin) {
-        showToast(`"${data.name}" cadastrado e aprovado no mapa!`);
+        showToast(`"${data.name}" cadastrado e publicado no guia!`);
       } else {
         showToast(`"${data.name}" enviado com sucesso para a aprovação da moderação!`);
       }
     }
     setEstablishments(updated);
+    if (activeModalItem && activeModalItem.id === data.id) {
+      setActiveModalItem(data);
+    }
     if (data.status === 'approved') {
       setSelectedId(data.id);
     }
@@ -226,6 +229,10 @@ export default function App() {
   const handleApproveEstablishment = (id: string) => {
     const updated = approveEstablishment(id);
     setEstablishments(updated);
+    if (activeModalItem && activeModalItem.id === id) {
+      const target = updated.find((e) => e.id === id);
+      if (target) setActiveModalItem(target);
+    }
     setSelectedId(id);
     resetFilters();
     showToast('Espaço aprovado com sucesso! Publicado no mapa e catálogo público.');
@@ -234,6 +241,7 @@ export default function App() {
   const handleRejectEstablishment = (id: string) => {
     const updated = rejectEstablishment(id);
     setEstablishments(updated);
+    if (activeModalItem?.id === id) setActiveModalItem(null);
     showToast('Cadastro recusado e removido da moderação.');
   };
 
