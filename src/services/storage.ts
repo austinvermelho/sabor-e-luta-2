@@ -47,13 +47,11 @@ export const saveProjectSupportConfig = (config: ProjectSupportConfig): void => 
   }
 };
 
-// Ler todos os estabelecimentos do localStorage (garantindo status e coordenadas válidos)
-export const getEstablishments = (): Establishment[] => {
+// Internal local storage helpers
+const getEstablishmentsLocally = (): Establishment[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed.map((e: any) => ({
@@ -68,7 +66,7 @@ export const getEstablishments = (): Establishment[] => {
   }
 };
 
-export const saveEstablishments = (items: Establishment[]): void => {
+const saveEstablishmentsLocally = (items: Establishment[]): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch (error) {
@@ -76,38 +74,109 @@ export const saveEstablishments = (items: Establishment[]): void => {
   }
 };
 
+// Synchronous fallback read
+export const getEstablishments = (): Establishment[] => {
+  return getEstablishmentsLocally();
+};
+
+export const saveEstablishments = (items: Establishment[]): void => {
+  saveEstablishmentsLocally(items);
+  // Also sync bulk items to API if server is active
+  fetch('/api/establishments/bulk', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(items),
+  }).catch(() => {});
+};
+
+// Async fetch from central API server (for multi-device / multi-user persistence)
+export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
+  try {
+    const res = await fetch('/api/establishments');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        saveEstablishmentsLocally(data);
+        return data;
+      }
+    }
+  } catch (err) {
+    console.warn('API central de estabelecimentos indisponível, usando armazenamento local:', err);
+  }
+  
+  // Fallback to local storage or suggested examples if completely empty
+  const local = getEstablishmentsLocally();
+  if (local.length === 0) {
+    saveEstablishmentsLocally(SUGGESTED_EXAMPLES);
+    return SUGGESTED_EXAMPLES;
+  }
+  return local;
+};
+
+// Async API persistence sync
+export const syncEstablishmentToAPI = async (item: Establishment) => {
+  try {
+    await fetch('/api/establishments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+  } catch (err) {
+    console.warn('Não foi possível sincronizar com o servidor central:', err);
+  }
+};
+
+export const deleteEstablishmentFromAPI = async (id: string) => {
+  try {
+    await fetch(`/api/establishments/${id}`, {
+      method: 'DELETE',
+    });
+  } catch (err) {
+    console.warn('Não foi possível remover no servidor central:', err);
+  }
+};
+
 export const addEstablishment = (item: Establishment): Establishment[] => {
-  const current = getEstablishments();
+  const current = getEstablishmentsLocally();
   const updated = [item, ...current];
-  saveEstablishments(updated);
+  saveEstablishmentsLocally(updated);
+  syncEstablishmentToAPI(item);
   return updated;
 };
 
 export const updateEstablishment = (item: Establishment): Establishment[] => {
-  const current = getEstablishments();
+  const current = getEstablishmentsLocally();
   const updated = current.map((e) => (e.id === item.id ? item : e));
-  saveEstablishments(updated);
+  saveEstablishmentsLocally(updated);
+  syncEstablishmentToAPI(item);
   return updated;
 };
 
 export const approveEstablishment = (id: string): Establishment[] => {
-  const current = getEstablishments();
+  const current = getEstablishmentsLocally();
+  const target = current.find((e) => e.id === id);
+  const updatedItem = target ? { ...target, status: 'approved' as const } : null;
   const updated = current.map((e) => (e.id === id ? { ...e, status: 'approved' as const } : e));
-  saveEstablishments(updated);
+  saveEstablishmentsLocally(updated);
+  if (updatedItem) {
+    syncEstablishmentToAPI(updatedItem);
+  }
   return updated;
 };
 
 export const rejectEstablishment = (id: string): Establishment[] => {
-  const current = getEstablishments();
+  const current = getEstablishmentsLocally();
   const updated = current.filter((e) => e.id !== id);
-  saveEstablishments(updated);
+  saveEstablishmentsLocally(updated);
+  deleteEstablishmentFromAPI(id);
   return updated;
 };
 
 export const deleteEstablishment = (id: string): Establishment[] => {
-  const current = getEstablishments();
+  const current = getEstablishmentsLocally();
   const updated = current.filter((e) => e.id !== id);
-  saveEstablishments(updated);
+  saveEstablishmentsLocally(updated);
+  deleteEstablishmentFromAPI(id);
   return updated;
 };
 
@@ -166,7 +235,7 @@ export const saveAdSenseConfig = (config: AdSenseConfig): void => {
   }
 };
 
-// Exemplos autênticos sugeridos (Aprovados por padrão caso carregados manualmente)
+// Exemplos autênticos sugeridos
 export const SUGGESTED_EXAMPLES: Establishment[] = [
   {
     id: 'ex-armazem-campo-sp',
@@ -179,9 +248,10 @@ export const SUGGESTED_EXAMPLES: Establishment[] = [
     latitude: -23.5303,
     longitude: -46.6502,
     description: 'Espaço de comercialização direta da produção de assentamentos e cooperativas da agricultura familiar camponesa e reforma agrária. Alimentos sem veneno, café orgânico e culinária popular.',
+    operatingHours: 'Segunda a Sábado, das 9h às 19h',
     instagram: '@armazemdocampo.sp',
     status: 'approved',
-    createdAt: new Date().toISOString()
+    createdAt: '2026-01-15T10:00:00.000Z'
   },
   {
     id: 'ex-al-janiah-sp',
@@ -194,9 +264,10 @@ export const SUGGESTED_EXAMPLES: Establishment[] = [
     latitude: -23.5594,
     longitude: -46.6481,
     description: 'Restaurante e centro cultural palestino gerido por refugiados e ativistas. Ponto de encontro dos movimentos sociais em São Paulo com culinária tradicional árabe, cervejas artesanais e debates.',
+    operatingHours: 'Terça a Domingo, das 18h às 00h',
     instagram: '@aljaniah_sp',
     status: 'approved',
-    createdAt: new Date().toISOString()
+    createdAt: '2026-01-20T10:00:00.000Z'
   },
   {
     id: 'ex-ordinario-bar',
@@ -209,8 +280,9 @@ export const SUGGESTED_EXAMPLES: Establishment[] = [
     latitude: -25.4309,
     longitude: -49.2685,
     description: 'Boteco progressista, independente e acolhedor. Comida honesta, cervejas artesanais locais e ponto de encontro para quem defende a democracia e os direitos dos trabalhadores.',
+    operatingHours: 'Terça a Domingo, das 17h às 23h30',
     instagram: '@ordinario.bar',
     status: 'approved',
-    createdAt: new Date().toISOString()
+    createdAt: '2026-02-01T10:00:00.000Z'
   }
 ];

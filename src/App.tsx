@@ -14,6 +14,7 @@ import {
 import { Establishment, AdSenseConfig, ProjectSupportConfig } from './types';
 import { 
   getEstablishments, 
+  fetchEstablishmentsAsync,
   saveEstablishments, 
   addEstablishment, 
   updateEstablishment, 
@@ -91,10 +92,17 @@ export default function App() {
   // Notification toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Load from localStorage on mount
+  // Load from central API server with localStorage fallback on mount
   useEffect(() => {
-    const loaded = getEstablishments();
-    setEstablishments(loaded);
+    const initial = getEstablishments();
+    if (initial.length > 0) {
+      setEstablishments(initial);
+    }
+    fetchEstablishmentsAsync().then((items) => {
+      if (items && items.length > 0) {
+        setEstablishments(items);
+      }
+    });
   }, []);
 
   const showToast = (msg: string) => {

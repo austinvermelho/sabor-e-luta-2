@@ -1,0 +1,124 @@
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const DATA_FILE = path.join(__dirname, 'data', 'establishments.json');
+
+app.use(express.json());
+
+// Helper to read persistent establishments
+function readEstablishmentsData(): any[] {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      return [];
+    }
+    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Error reading establishments data file:', error);
+    return [];
+  }
+}
+
+// Helper to write persistent establishments
+function writeEstablishmentsData(data: any[]): void {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Error writing establishments data file:', error);
+  }
+}
+
+// API Routes
+app.get('/api/establishments', (req, res) => {
+  const items = readEstablishmentsData();
+  res.json(items);
+});
+
+app.post('/api/establishments', (req, res) => {
+  const newItem = req.body;
+  if (!newItem || !newItem.id || !newItem.name) {
+    return res.status(400).json({ error: 'Item de estabelecimento inválido.' });
+  }
+
+  const current = readEstablishmentsData();
+  const existingIndex = current.findIndex((e) => e.id === newItem.id);
+
+  if (existingIndex >= 0) {
+    current[existingIndex] = newItem;
+  } else {
+    current.unshift(newItem);
+  }
+
+  writeEstablishmentsData(current);
+  res.json({ success: true, items: current });
+});
+
+app.post('/api/establishments/bulk', (req, res) => {
+  const items = req.body;
+  if (!Array.isArray(items)) {
+    return res.status(400).json({ error: 'Payload deve ser uma lista.' });
+  }
+  writeEstablishmentsData(items);
+  res.json({ success: true, count: items.length });
+});
+
+app.put('/api/establishments/:id', (req, res) => {
+  const { id } = req.params;
+  const updatedData = req.body;
+
+  const current = readEstablishmentsData();
+  const index = current.findIndex((e) => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+  }
+
+  current[index] = { ...current[index], ...updatedData };
+  writeEstablishmentsData(current);
+
+  res.json({ success: true, item: current[index], items: current });
+});
+
+app.delete('/api/establishments/:id', (req, res) => {
+  const { id } = req.params;
+  const current = readEstablishmentsData();
+  const filtered = current.filter((e) => e.id !== id);
+
+  writeEstablishmentsData(filtered);
+  res.json({ success: true, items: filtered });
+});
+
+// Mount Vite in development
+async function startServer() {
+  if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static(path.join(__dirname, 'dist')));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Sabor & Luta server running at http://0.0.0.0:${PORT}`);
+  });
+}
+
+startServer();
