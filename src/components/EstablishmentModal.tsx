@@ -110,9 +110,14 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
 
   const openStatus = getOpenStatus(establishment.operatingHours);
 
-  const mapExternalUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${establishment.name}, ${establishment.address}, ${establishment.city} - ${establishment.state}`
-  )}`;
+  const hasCoordinates = typeof establishment.latitude === 'number' && typeof establishment.longitude === 'number' && !isNaN(establishment.latitude) && !isNaN(establishment.longitude);
+
+  const mapExternalUrl = hasCoordinates
+    ? `https://www.google.com/maps/search/?api=1&query=${establishment.latitude},${establishment.longitude}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${establishment.address}, ${establishment.city} - ${establishment.state}`
+      )}`;
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
