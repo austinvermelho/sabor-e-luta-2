@@ -1,9 +1,12 @@
 import { Establishment, AdSenseConfig, ProjectSupportConfig } from '../types';
+import { db } from '../lib/firebase';
+import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 const STORAGE_KEY = 'sabor_luta_estabelecimentos';
 const ADSENSE_KEY = 'sabor_luta_adsense_config';
 const PROJECT_PIX_KEY = 'sabor_luta_project_pix';
 
+// ... (Keep existing config helpers using localStorage)
 export const DEFAULT_PROJECT_SUPPORT: ProjectSupportConfig = {
   pixKey: 'contato@ordinario.bar',
   pixType: 'email',
@@ -22,7 +25,6 @@ export const getProjectSupportConfig = (): ProjectSupportConfig => {
 };
 
 const ADMIN_PIN_KEY = 'sabor_luta_admin_pin';
-
 export const getAdminPin = (): string => {
   try {
     return localStorage.getItem(ADMIN_PIN_KEY) || 'sabor2026';
@@ -47,235 +49,71 @@ export const saveProjectSupportConfig = (config: ProjectSupportConfig): void => 
   }
 };
 
-// Internal local storage helpers
-const getEstablishmentsLocally = (): Establishment[] => {
+// Firestore Helpers
+const ESTABLISHMENTS_COL = collection(db, 'establishments');
+
+export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((e: any) => ({
-      ...e,
-      latitude: typeof e.latitude === 'number' ? e.latitude : parseFloat(e.latitude) || 0,
-      longitude: typeof e.longitude === 'number' ? e.longitude : parseFloat(e.longitude) || 0,
-      status: e.status === 'pending' ? 'pending' : 'approved',
-    }));
-  } catch (error) {
-    console.error('Erro ao ler estabelecimentos do localStorage:', error);
+    const snapshot = await getDocs(ESTABLISHMENTS_COL);
+    return snapshot.docs.map(doc => doc.data() as Establishment);
+  } catch (err) {
+    console.error('Erro ao buscar do Firestore:', err);
     return [];
   }
 };
 
-const saveEstablishmentsLocally = (items: Establishment[]): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch (error) {
-    console.error('Erro ao salvar no localStorage:', error);
-  }
-};
-
-// Synchronous fallback read
-export const getEstablishments = (): Establishment[] => {
-  return getEstablishmentsLocally();
-};
-
-export const saveEstablishments = (items: Establishment[]): void => {
-  saveEstablishmentsLocally(items);
-  // Also sync bulk items to API if server is active
-  fetch('/api/establishments/bulk', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(items),
-  }).catch(() => {});
-};
-
-export const clearLocalCacheAndReload = (): void => {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (err) {
-    console.error('Erro ao limpar cache local:', err);
-  }
-  window.location.href = window.location.origin + '?v=' + Date.now();
-};
-
-// Async fetch from central API server (for multi-device / multi-user persistence)
-export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
-  try {
-    const res = await fetch(`/api/establishments?_t=${Date.now()}`, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-      },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        if (data.length > 0) {
-          saveEstablishmentsLocally(data);
-          return data;
-        } else {
-          // If server database is empty, seed defaults and sync
-          saveEstablishmentsLocally(SUGGESTED_EXAMPLES);
-          await fetch('/api/establishments/bulk', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(SUGGESTED_EXAMPLES),
-          }).catch(() => {});
-          return SUGGESTED_EXAMPLES;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('API central de estabelecimentos indisponível, usando armazenamento local:', err);
-  }
-  
-  // Fallback to local storage or suggested examples if completely empty
-  const local = getEstablishmentsLocally();
-  if (local.length === 0) {
-    saveEstablishmentsLocally(SUGGESTED_EXAMPLES);
-    return SUGGESTED_EXAMPLES;
-  }
-  return local;
-};
-
-// Async API persistence sync
 export const syncEstablishmentToAPI = async (item: Establishment): Promise<Establishment[] | null> => {
   try {
-    const res = await fetch('/api/establishments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
-    });
-    if (res.ok) {
-      const result = await res.json();
-      if (result && Array.isArray(result.items)) {
-        saveEstablishmentsLocally(result.items);
-        return result.items;
-      }
-    }
+    await setDoc(doc(ESTABLISHMENTS_COL, item.id), item);
+    return await fetchEstablishmentsAsync();
   } catch (err) {
-    console.warn('Não foi possível sincronizar com o servidor central:', err);
+    console.error('Erro ao salvar no Firestore:', err);
+    return null;
   }
-  return null;
 };
 
 export const deleteEstablishmentFromAPI = async (id: string): Promise<Establishment[] | null> => {
   try {
-    const res = await fetch(`/api/establishments/${id}`, {
-      method: 'DELETE',
-    });
-    if (res.ok) {
-      const result = await res.json();
-      if (result && Array.isArray(result.items)) {
-        saveEstablishmentsLocally(result.items);
-        return result.items;
-      }
-    }
+    await deleteDoc(doc(ESTABLISHMENTS_COL, id));
+    return await fetchEstablishmentsAsync();
   } catch (err) {
-    console.warn('Não foi possível remover no servidor central:', err);
+    console.error('Erro ao deletar no Firestore:', err);
+    return null;
   }
-  return null;
-};
-
-export const addEstablishment = (item: Establishment): Establishment[] => {
-  const current = getEstablishmentsLocally();
-  const updated = [item, ...current.filter((e) => e.id !== item.id)];
-  saveEstablishmentsLocally(updated);
-  syncEstablishmentToAPI(item);
-  return updated;
-};
-
-export const updateEstablishment = (item: Establishment): Establishment[] => {
-  const current = getEstablishmentsLocally();
-  const updated = current.map((e) => (e.id === item.id ? item : e));
-  saveEstablishmentsLocally(updated);
-  syncEstablishmentToAPI(item);
-  return updated;
-};
-
-export const approveEstablishment = (id: string): Establishment[] => {
-  const current = getEstablishmentsLocally();
-  const target = current.find((e) => e.id === id);
-  const updatedItem = target ? { ...target, status: 'approved' as const } : null;
-  const updated = current.map((e) => (e.id === id ? { ...e, status: 'approved' as const } : e));
-  saveEstablishmentsLocally(updated);
-  if (updatedItem) {
-    syncEstablishmentToAPI(updatedItem);
-  }
-  return updated;
-};
-
-export const rejectEstablishment = (id: string): Establishment[] => {
-  const current = getEstablishmentsLocally();
-  const updated = current.filter((e) => e.id !== id);
-  saveEstablishmentsLocally(updated);
-  deleteEstablishmentFromAPI(id);
-  return updated;
-};
-
-export const deleteEstablishment = (id: string): Establishment[] => {
-  const current = getEstablishmentsLocally();
-  const updated = current.filter((e) => e.id !== id);
-  saveEstablishmentsLocally(updated);
-  deleteEstablishmentFromAPI(id);
-  return updated;
-};
-
-// Async Curator Helpers guaranteeing server disk write and immediate reflection
-export const approveEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
-  const localUpdated = approveEstablishment(id);
-  const target = localUpdated.find((e) => e.id === id);
-  if (target) {
-    const serverItems = await syncEstablishmentToAPI(target);
-    if (serverItems) return serverItems;
-  }
-  return localUpdated;
-};
-
-export const rejectEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
-  const localUpdated = rejectEstablishment(id);
-  const serverItems = await deleteEstablishmentFromAPI(id);
-  return serverItems || localUpdated;
-};
-
-export const deleteEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
-  const localUpdated = deleteEstablishment(id);
-  const serverItems = await deleteEstablishmentFromAPI(id);
-  return serverItems || localUpdated;
 };
 
 export const saveEstablishmentAsync = async (item: Establishment, isEdit: boolean): Promise<Establishment[]> => {
-  const localUpdated = isEdit ? updateEstablishment(item) : addEstablishment(item);
-  const serverItems = await syncEstablishmentToAPI(item);
-  return serverItems || localUpdated;
+  await syncEstablishmentToAPI(item);
+  return await fetchEstablishmentsAsync() || [];
 };
 
-// Exportação e Importação de base de dados
-export const exportCatalogJSON = (items: Establishment[]): void => {
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(items, null, 2));
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `sabor_e_luta_catalogo_${new Date().toISOString().slice(0, 10)}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-};
-
-export const importCatalogJSON = (jsonString: string): Establishment[] => {
-  const parsed = JSON.parse(jsonString);
-  if (!Array.isArray(parsed)) {
-    throw new Error('O arquivo não contém uma lista válida de estabelecimentos.');
+export const approveEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  // We need to fetch it first to approve it, or pass the object
+  // Simplify: update status in firestore
+  const items = await fetchEstablishmentsAsync();
+  const target = items.find(i => i.id === id);
+  if (target) {
+    await syncEstablishmentToAPI({ ...target, status: 'approved' });
   }
-  const formatted = parsed.map((e: any) => ({
-    ...e,
-    status: e.status || 'approved',
-  }));
-  saveEstablishments(formatted);
-  return formatted;
+  return await fetchEstablishmentsAsync() || [];
 };
 
-// Configurações do Google AdSense
+export const rejectEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  await deleteEstablishmentFromAPI(id);
+  return await fetchEstablishmentsAsync() || [];
+};
+
+export const deleteEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  await deleteEstablishmentFromAPI(id);
+  return await fetchEstablishmentsAsync() || [];
+};
+
+// Placeholder for remaining local storage functions for now
+export const getEstablishments = (): Establishment[] => [];
+export const saveEstablishments = (items: Establishment[]): void => {};
+export const clearLocalCacheAndReload = (): void => { window.location.reload(); };
+
+// ... (Keep existing AdSense config and SUGGESTED_EXAMPLES)
 export const getAdSenseConfig = (): AdSenseConfig => {
   try {
     const raw = localStorage.getItem(ADSENSE_KEY);
@@ -297,7 +135,6 @@ export const getAdSenseConfig = (): AdSenseConfig => {
     };
   }
 };
-
 export const saveAdSenseConfig = (config: AdSenseConfig): void => {
   try {
     localStorage.setItem(ADSENSE_KEY, JSON.stringify(config));
@@ -306,7 +143,6 @@ export const saveAdSenseConfig = (config: AdSenseConfig): void => {
   }
 };
 
-// Exemplos autênticos sugeridos
 export const SUGGESTED_EXAMPLES: Establishment[] = [
   {
     id: 'ex-armazem-campo-sp',

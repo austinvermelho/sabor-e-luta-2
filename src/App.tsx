@@ -16,11 +16,6 @@ import {
   getEstablishments, 
   fetchEstablishmentsAsync,
   saveEstablishments, 
-  addEstablishment, 
-  updateEstablishment, 
-  deleteEstablishment,
-  approveEstablishment,
-  rejectEstablishment,
   saveEstablishmentAsync,
   approveEstablishmentAsync,
   rejectEstablishmentAsync,
@@ -141,7 +136,7 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
     fetchEstablishmentsAsync().then((items) => {
-      if (isMounted && items && items.length > 0) {
+      if (isMounted && Array.isArray(items)) {
         setEstablishments(items);
       }
     });
