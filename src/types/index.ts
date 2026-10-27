@@ -26,9 +26,25 @@ export interface Establishment {
   suggestedCategory?: string;
   suggestedTags?: string[];
   history?: string;
-  operatingHours?: string;
+  operatingHours?: OperatingHours;
   status: 'approved' | 'pending' | 'rejected';
   createdAt: string;
+}
+
+export interface DaySchedule {
+  isOpen: boolean;
+  open: string;
+  close: string;
+}
+
+export interface OperatingHours {
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
 }
 
 export interface AdPartner {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, MapPin, Check, AlertCircle, Sparkles } from 'lucide-react';
-import { Establishment, CategoryType } from '../types';
+import { Establishment, CategoryType, OperatingHours } from '../types';
 import { CATEGORIES, POPULAR_TAGS } from '../utils/categories';
+import { OperatingHoursSelector } from './OperatingHoursSelector';
 import { searchAddressCoordinates } from '../services/geocoding';
 
 interface RegistrationModalProps {
@@ -31,12 +32,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<CategoryType>('bar_popular');
-  const [suggestedCategory, setSuggestedCategory] = useState('');
-  const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
-  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
-  const [newTagInput, setNewTagInput] = useState('');
-  const [isSuggestingTag, setIsSuggestingTag] = useState(false);
   const [city, setCity] = useState('');
   const [state, setState] = useState('SP');
   const [address, setAddress] = useState('');
@@ -44,7 +40,15 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [longitude, setLongitude] = useState<string>('');
   const [description, setDescription] = useState('');
   const [history, setHistory] = useState('');
-  const [operatingHours, setOperatingHours] = useState('');
+  const [operatingHours, setOperatingHours] = useState<OperatingHours>({
+    monday: { isOpen: false, open: '09:00', close: '18:00' },
+    tuesday: { isOpen: false, open: '09:00', close: '18:00' },
+    wednesday: { isOpen: false, open: '09:00', close: '18:00' },
+    thursday: { isOpen: false, open: '09:00', close: '18:00' },
+    friday: { isOpen: false, open: '09:00', close: '18:00' },
+    saturday: { isOpen: false, open: '09:00', close: '18:00' },
+    sunday: { isOpen: false, open: '09:00', close: '18:00' },
+  });
   const [submittedPublic, setSubmittedPublic] = useState(false);
 
   // Contato & Redes
@@ -64,12 +68,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     if (initialData) {
       setName(initialData.name);
       setCategory(initialData.category);
-      setSuggestedCategory(initialData.suggestedCategory || '');
-      setIsSuggestingCategory(Boolean(initialData.suggestedCategory));
       setTags(initialData.tags || []);
-      setSuggestedTags(initialData.suggestedTags || []);
-      setNewTagInput('');
-      setIsSuggestingTag(false);
       setCity(initialData.city);
       setState(initialData.state);
       setAddress(initialData.address);
@@ -77,7 +76,15 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       setLongitude(initialData.longitude?.toString() || '');
       setDescription(initialData.description);
       setHistory(initialData.history || '');
-      setOperatingHours(initialData.operatingHours || '');
+      setOperatingHours(typeof initialData.operatingHours === 'object' ? initialData.operatingHours : {
+        monday: { isOpen: false, open: '09:00', close: '18:00' },
+        tuesday: { isOpen: false, open: '09:00', close: '18:00' },
+        wednesday: { isOpen: false, open: '09:00', close: '18:00' },
+        thursday: { isOpen: false, open: '09:00', close: '18:00' },
+        friday: { isOpen: false, open: '09:00', close: '18:00' },
+        saturday: { isOpen: false, open: '09:00', close: '18:00' },
+        sunday: { isOpen: false, open: '09:00', close: '18:00' },
+      });
       setInstagram(initialData.instagram || '');
       setWhatsapp(initialData.whatsapp || '');
       setWebsite(initialData.website || '');
@@ -85,12 +92,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     } else {
       setName('');
       setCategory('bar_popular');
-      setSuggestedCategory('');
-      setIsSuggestingCategory(false);
       setTags(['Espaço LGBTQIA+ Acolhedor', 'Preço Popular & Solidário']);
-      setSuggestedTags([]);
-      setNewTagInput('');
-      setIsSuggestingTag(false);
       setCity('');
       setState('SP');
       setAddress('');
@@ -98,7 +100,15 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       setLongitude('');
       setDescription('');
       setHistory('');
-      setOperatingHours('');
+      setOperatingHours({
+        monday: { isOpen: false, open: '09:00', close: '18:00' },
+        tuesday: { isOpen: false, open: '09:00', close: '18:00' },
+        wednesday: { isOpen: false, open: '09:00', close: '18:00' },
+        thursday: { isOpen: false, open: '09:00', close: '18:00' },
+        friday: { isOpen: false, open: '09:00', close: '18:00' },
+        saturday: { isOpen: false, open: '09:00', close: '18:00' },
+        sunday: { isOpen: false, open: '09:00', close: '18:00' },
+      });
       setInstagram('');
       setWhatsapp('');
       setWebsite('');
@@ -122,24 +132,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     } else {
       setTags([...tags, tag]);
     }
-  };
-
-  const handleAddSuggestedTag = () => {
-    const trimmed = newTagInput.trim();
-    if (!trimmed) return;
-
-    if (!tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
-    }
-    if (!suggestedTags.includes(trimmed)) {
-      setSuggestedTags([...suggestedTags, trimmed]);
-    }
-    setNewTagInput('');
-  };
-
-  const handleRemoveCustomTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
-    setSuggestedTags(suggestedTags.filter((t) => t !== tagToRemove));
   };
 
   const handleLookupCoordinates = async () => {
@@ -200,8 +192,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       return;
     }
 
-    if (!operatingHours.trim()) {
-      setFormError('Por favor, informe os dias e horário de funcionamento.');
+    const hasOpenDay = Object.values(operatingHours).some(day => day.isOpen);
+    if (!hasOpenDay) {
+      setFormError('Por favor, informe ao menos um dia de funcionamento.');
       return;
     }
 
@@ -217,12 +210,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       longitude: lngNum,
       description: description.trim(),
       history: history.trim() || undefined,
-      operatingHours: operatingHours.trim() || undefined,
+      operatingHours: operatingHours,
       instagram: instagram.trim() || undefined,
       whatsapp: whatsapp.trim() || undefined,
       website: website.trim() || undefined,
-      suggestedCategory: isSuggestingCategory && suggestedCategory.trim() ? suggestedCategory.trim() : undefined,
-      suggestedTags: suggestedTags.length > 0 ? suggestedTags : undefined,
       status: initialData ? initialData.status : (isAdmin ? 'approved' : 'pending'),
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
@@ -256,7 +247,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -301,437 +292,308 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 1. Identificação do Espaço
               </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                  Nome do Estabelecimento / Coletivo *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Armazém do Povo, Coletivo Agro, Bar do Zé..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                    Nome do Estabelecimento / Coletivo *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Armazém do Povo, Coletivo Agro, Bar do Zé..."
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
+                  />
+                </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-neutral-700">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
                     Categoria Principal *
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsSuggestingCategory(!isSuggestingCategory)}
-                    className="text-[11px] font-semibold text-[#d32f2f] hover:text-[#b71c1c] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as CategoryType)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm bg-white"
                   >
-                    <Sparkles className="w-3 h-3 text-amber-500" />
-                    <span>{isSuggestingCategory ? 'Fechar sugestão' : 'Sugerir categoria'}</span>
-                  </button>
+                    {Object.values(CATEGORIES).map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.icon} {cat.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as CategoryType)}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm bg-white"
-                >
-                  {Object.values(CATEGORIES).map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.icon} {cat.label}
-                    </option>
-                  ))}
-                </select>
+              </div>
 
-                {/* Bloco de Sugestão de Nova Categoria */}
-                {isSuggestingCategory && (
-                  <div className="mt-2.5 p-3 bg-amber-50/80 border border-amber-300/80 rounded-lg space-y-1.5 animate-fadeIn">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                        <span aria-hidden="true">💡</span>
-                        <span>Sugerir Nova Categoria</span>
-                      </label>
+              {/* Bandeiras & Práticas (Tags) */}
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-2">
+                  Bandeiras, Práticas & Diferenciais Progressistas
+                </label>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {POPULAR_TAGS.map((tag) => {
+                    const selected = tags.includes(tag);
+                    return (
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsSuggestingCategory(false);
-                          setSuggestedCategory('');
-                        }}
-                        className="text-[11px] text-amber-700 hover:text-amber-950 underline cursor-pointer"
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`text-xs px-2.5 py-1.5 rounded-md transition-colors font-medium border cursor-pointer ${
+                          selected
+                            ? 'bg-[#d32f2f] text-white border-[#d32f2f]'
+                            : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-300'
+                        }`}
                       >
-                        Cancelar
+                        {selected && <Check className="w-3 h-3 inline mr-1 stroke-[3]" />}
+                        {tag}
                       </button>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Ex: Padaria Comunitária, Empório Agroflorestal, Pizzaria Popular..."
-                      value={suggestedCategory}
-                      onChange={(e) => setSuggestedCategory(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs rounded-md border border-amber-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#d32f2f] focus:border-[#d32f2f]"
-                    />
-                    <p className="text-[10.5px] text-amber-900 leading-tight">
-                      Não encontrou uma categoria que represente seu espaço? Escreva sua sugestão acima. Nossa equipe de curadoria avaliará a inclusão!
-                    </p>
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* Bandeiras & Práticas (Tags) */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-semibold text-neutral-700">
-                  Bandeiras, Práticas & Diferenciais Progressistas
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIsSuggestingTag(!isSuggestingTag)}
-                  className="text-[11px] font-semibold text-[#d32f2f] hover:text-[#b71c1c] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  <span>{isSuggestingTag ? 'Fechar sugestão' : 'Sugerir bandeira / prática'}</span>
-                </button>
+            {/* Seção 2: Localização & Coordenadas */}
+            <div className="space-y-4">
+              <h4 className="text-xs uppercase font-bold text-[#d32f2f] tracking-wider pb-1 border-b border-neutral-100">
+                2. Localização & Ponto no Mapa
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                    Cidade *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: São Paulo, Rio de Janeiro, Curitiba..."
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                    Estado (UF) *
+                  </label>
+                  <select
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm bg-white"
+                  >
+                    {BRAZILIAN_STATES.map((uf) => (
+                      <option key={uf} value={uf}>
+                        {uf}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Bloco de Sugestão de Nova Bandeira/Prática */}
-              {isSuggestingTag && (
-                <div className="mb-3 p-3 bg-amber-50/80 border border-amber-300/80 rounded-lg space-y-2 animate-fadeIn">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                      <span aria-hidden="true">🚩</span>
-                      <span>Sugerir Nova Bandeira ou Prática</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSuggestingTag(false);
-                        setNewTagInput('');
-                      }}
-                      className="text-[11px] text-amber-700 hover:text-amber-950 underline cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Ex: Horta Comunitária, Livros Livres, Cozinha sem Desperdício..."
-                      value={newTagInput}
-                      onChange={(e) => setNewTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddSuggestedTag();
-                        }
-                      }}
-                      className="flex-1 px-3 py-1.5 text-xs rounded-md border border-amber-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#d32f2f] focus:border-[#d32f2f]"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddSuggestedTag}
-                      disabled={!newTagInput.trim()}
-                      className="px-3 py-1.5 bg-[#d32f2f] hover:bg-[#b71c1c] disabled:opacity-50 text-white text-xs font-bold rounded-md transition-colors cursor-pointer"
-                    >
-                      Adicionar
-                    </button>
-                  </div>
-                  <p className="text-[10.5px] text-amber-900 leading-tight">
-                    Sua sugestão será incluída no espaço e enviada para a curadoria avaliar se vira uma bandeira oficial no guia!
-                  </p>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  Endereço Completo (Rua, Número, Bairro) *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Rua Augusta, 123 - Consolação"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleLookupCoordinates}
+                    disabled={isSearchingCoord}
+                    title="Buscar Latitude e Longitude automaticamente pelo OpenStreetMap"
+                    className="bg-neutral-800 hover:bg-neutral-900 text-white px-3.5 py-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 transition-colors shadow-xs cursor-pointer"
+                  >
+                    <Search className={`w-3.5 h-3.5 ${isSearchingCoord ? 'animate-spin' : ''}`} />
+                    <span>{isSearchingCoord ? 'Buscando...' : 'Buscar no Mapa'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Geocode feedback notices */}
+              {coordSuccess && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded text-emerald-800 text-xs font-medium flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{coordSuccess}</span>
+                </div>
+              )}
+              {coordError && (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded text-amber-800 text-xs font-medium flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>{coordError}</span>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_TAGS.map((tag) => {
-                  const selected = tags.includes(tag);
-                  return (
+              {/* Coordenadas manuais e botão de apontamento */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-neutral-50 p-3.5 rounded-lg border border-neutral-200">
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                    Latitude *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="-23.550520"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                    Longitude *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="-46.633308"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 flex items-center justify-between text-xs text-neutral-500 pt-1">
+                  <span>Dica: Use "Buscar no Mapa" ou selecione direto:</span>
+                  {onStartPickOnMap && (
                     <button
                       type="button"
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={`text-xs px-2.5 py-1.5 rounded-md transition-colors font-medium border cursor-pointer ${
-                        selected
-                          ? 'bg-[#d32f2f] text-white border-[#d32f2f]'
-                          : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-300'
-                      }`}
+                      onClick={onStartPickOnMap}
+                      className="text-[#d32f2f] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                     >
-                      {selected && <Check className="w-3 h-3 inline mr-1 stroke-[3]" />}
-                      {tag}
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>Marcar com clique no mapa</span>
                     </button>
-                  );
-                })}
-
-                {/* Exibir tags sugeridas/customizadas pelo usuário */}
-                {suggestedTags.map((tag) => {
-                  if (POPULAR_TAGS.includes(tag)) return null;
-                  const selected = tags.includes(tag);
-                  return (
-                    <span
-                      key={tag}
-                      className={`text-xs px-2.5 py-1.5 rounded-md font-medium border flex items-center gap-1.5 ${
-                        selected
-                          ? 'bg-amber-600 text-white border-amber-600'
-                          : 'bg-amber-50 text-amber-900 border-amber-300'
-                      }`}
-                    >
-                      <span>💡 {tag}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCustomTag(tag)}
-                        title="Remover bandeira sugerida"
-                        className="hover:opacity-75 cursor-pointer ml-0.5 text-white/90 hover:text-white font-bold"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Seção 2: Localização & Coordenadas */}
-          <div className="space-y-4">
-            <h4 className="text-xs uppercase font-bold text-[#d32f2f] tracking-wider pb-1 border-b border-neutral-100">
-              2. Localização & Ponto no Mapa
-            </h4>
+            {/* Seção 3: Descrição & Manifesto */}
+            <div className="space-y-4">
+              <h4 className="text-xs uppercase font-bold text-[#d32f2f] tracking-wider pb-1 border-b border-neutral-100">
+                3. Manifesto & História da Casa
+              </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
+              <div>
                 <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                  Cidade *
+                  Por que este espaço faz parte da luta e gastronomia progressista? *
                 </label>
-                <input
-                  type="text"
+                <textarea
                   required
-                  placeholder="Ex: São Paulo, Rio de Janeiro, Curitiba..."
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
+                  rows={4}
+                  placeholder="Conte a história do espaço, valores políticos, origem dos ingredientes, compromisso com os trabalhadores e seu papel na comunidade..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm leading-relaxed"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                  Estado (UF) *
+                  História / Trajetória de Luta (Opcional)
                 </label>
-                <select
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm bg-white"
-                >
-                  {BRAZILIAN_STATES.map((uf) => (
-                    <option key={uf} value={uf}>
-                      {uf}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Endereço Completo (Rua, Número, Bairro) *
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Rua Augusta, 123 - Consolação"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={handleLookupCoordinates}
-                  disabled={isSearchingCoord}
-                  title="Buscar Latitude e Longitude automaticamente pelo OpenStreetMap"
-                  className="bg-neutral-800 hover:bg-neutral-900 text-white px-3.5 py-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
-                >
-                  <Search className={`w-3.5 h-3.5 ${isSearchingCoord ? 'animate-spin' : ''}`} />
-                  <span>{isSearchingCoord ? 'Buscando...' : 'Buscar no Mapa'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Geocode feedback notices */}
-            {coordSuccess && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded text-emerald-800 text-xs font-medium flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{coordSuccess}</span>
-              </div>
-            )}
-            {coordError && (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded text-amber-800 text-xs font-medium flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>{coordError}</span>
-              </div>
-            )}
-
-            {/* Coordenadas manuais e botão de apontamento */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-neutral-50 p-3.5 rounded-lg border border-neutral-200">
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                  Latitude *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  placeholder="-23.550520"
-                  value={latitude}
-                  onChange={(e) => setLatitude(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white"
+                <textarea
+                  rows={3}
+                  placeholder="Conte brevemente a trajetória do estabelecimento, anos de resistência, fundação ou momentos marcantes..."
+                  value={history}
+                  onChange={(e) => setHistory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm leading-relaxed"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                  Longitude *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  required
-                  placeholder="-46.633308"
-                  value={longitude}
-                  onChange={(e) => setLongitude(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white"
-                />
-              </div>
-
-              <div className="sm:col-span-2 flex items-center justify-between text-xs text-neutral-500 pt-1">
-                <span>Dica: Use "Buscar no Mapa" ou selecione direto:</span>
-                {onStartPickOnMap && (
-                  <button
-                    type="button"
-                    onClick={onStartPickOnMap}
-                    className="text-[#d32f2f] hover:underline font-semibold flex items-center gap-1"
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Marcar com clique no mapa</span>
-                  </button>
-                )}
+                <div className="space-y-4">
+                  <OperatingHoursSelector 
+                    value={operatingHours} 
+                    onChange={setOperatingHours} 
+                  />
+                  <p className="text-xs text-neutral-500 italic bg-neutral-50 p-2 rounded">
+                    * Recomendamos sempre confirmar horários diretamente com o estabelecimento antes de visitar, pois podem sofrer alterações sem aviso prévio.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Seção 3: Descrição & Manifesto */}
-          <div className="space-y-4">
-            <h4 className="text-xs uppercase font-bold text-[#d32f2f] tracking-wider pb-1 border-b border-neutral-100">
-              3. Manifesto & História da Casa
-            </h4>
+            {/* Seção 4: Redes & Contato */}
+            <div className="space-y-4">
+              <h4 className="text-xs uppercase font-bold text-[#d32f2f] tracking-wider pb-1 border-b border-neutral-100">
+                4. Redes Sociais & Contato (Opcional)
+              </h4>
 
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Por que este espaço faz parte da luta e gastronomia progressista? *
-              </label>
-              <textarea
-                required
-                rows={4}
-                placeholder="Conte a história do espaço, valores políticos, origem dos ingredientes, compromisso com os trabalhadores e seu papel na comunidade..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm leading-relaxed"
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-700 mb-1">
+                    Instagram
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="@espaco_solidario"
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded border border-neutral-300"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                História / Trajetória de Luta (Opcional)
-              </label>
-              <textarea
-                rows={3}
-                placeholder="Conte brevemente a trajetória do estabelecimento, anos de resistência, fundação ou momentos marcantes..."
-                value={history}
-                onChange={(e) => setHistory(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm leading-relaxed"
-              />
-            </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-700 mb-1">
+                    WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="(11) 98765-4321"
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded border border-neutral-300"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                Dias e Horário de Funcionamento *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Terça a Domingo, das 11h30 às 23h"
-                value={operatingHours}
-                onChange={(e) => setOperatingHours(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f] text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Seção 4: Redes & Contato */}
-          <div className="space-y-4">
-            <h4 className="text-xs uppercase font-bold text-[#d32f2f] tracking-wider pb-1 border-b border-neutral-100">
-              4. Redes Sociais & Contato (Opcional)
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-1">
-                  Instagram
-                </label>
-                <input
-                  type="text"
-                  placeholder="@espaco_solidario"
-                  value={instagram}
-                  onChange={(e) => setInstagram(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded border border-neutral-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-1">
-                  WhatsApp
-                </label>
-                <input
-                  type="text"
-                  placeholder="(11) 98765-4321"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded border border-neutral-300"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-700 mb-1">
-                  Site Oficial
-                </label>
-                <input
-                  type="text"
-                  placeholder="www.espaco.org.br"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded border border-neutral-300"
-                />
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-700 mb-1">
+                    Site Oficial
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="www.espaco.org.br"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded border border-neutral-300"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Footer Submit Buttons */}
-          <div className="pt-4 border-t border-neutral-200 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#d32f2f] hover:bg-[#b71c1c] active:scale-95 rounded-lg transition-all shadow-md flex items-center gap-1.5"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{initialData ? 'Salvar Alterações' : 'Concluir Cadastro'}</span>
-            </button>
-          </div>
+            {/* Footer Submit Buttons */}
+            <div className="pt-4 border-t border-neutral-200 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-[#d32f2f] hover:bg-[#b71c1c] active:scale-95 rounded-lg transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{initialData ? 'Salvar Alterações' : 'Concluir Cadastro'}</span>
+              </button>
+            </div>
 
-        </form>
+          </form>
         )}
       </div>
     </div>

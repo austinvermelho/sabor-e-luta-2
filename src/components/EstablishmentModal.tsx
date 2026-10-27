@@ -9,13 +9,12 @@ import {
   Trash2, 
   Edit3, 
   Navigation2,
-  Heart,
   Share2,
   Copy,
   Check,
   Clock
 } from 'lucide-react';
-import { Establishment } from '../types';
+import { Establishment, OperatingHours } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
@@ -54,59 +53,16 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
     description: 'Espaço comunitário e comprometido socialmente.',
   };
 
-  const getOpenStatus = (hoursStr?: string) => {
-    if (!hoursStr) return { isOpen: true, label: 'Horário sob consulta', badgeColor: 'bg-neutral-100 text-neutral-700 border-neutral-200' };
-
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 = Dom, 1 = Seg, ..., 6 = Sáb
-    const currentHour = now.getHours();
-    const currentMin = now.getMinutes();
-    const currentTimeVal = currentHour * 60 + currentMin;
-
-    const lower = hoursStr.toLowerCase();
-
-    if (lower.includes('24h') || lower.includes('24 horas')) {
-      return { isOpen: true, label: 'Aberto 24h', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+  const getOpenStatus = (hours?: OperatingHours) => {
+    if (!hours) return { isOpen: true, label: 'Horário sob consulta', badgeColor: 'bg-neutral-100 text-neutral-700 border-neutral-200' };
+    
+    // Simple check if any day is marked open
+    const hasAnyOpen = Object.values(hours).some(h => h.isOpen);
+    if (!hasAnyOpen) {
+      return { isOpen: false, label: 'Fechado temporariamente', badgeColor: 'bg-neutral-100 text-neutral-600 border-neutral-200' };
     }
 
-    let isDayOpen = true;
-    if (lower.includes('segunda a sexta') || lower.includes('seg. a sex')) {
-      if (currentDay === 0 || currentDay === 6) isDayOpen = false;
-    } else if (lower.includes('terça a domingo') || lower.includes('terça a dom') || lower.includes('ter a dom')) {
-      if (currentDay === 1) isDayOpen = false;
-    } else if (lower.includes('segunda a sábado') || lower.includes('seg a sáb')) {
-      if (currentDay === 0) isDayOpen = false;
-    }
-
-    if (!isDayOpen) {
-      return { isOpen: false, label: 'Fechado hoje', badgeColor: 'bg-neutral-100 text-neutral-600 border-neutral-200' };
-    }
-
-    const regex = /(\d{1,2})(?:[h:](\d{2}))?/g;
-    const matches = [...hoursStr.matchAll(regex)];
-
-    if (matches.length >= 2) {
-      const startH = parseInt(matches[0][1], 10);
-      const startM = matches[0][2] ? parseInt(matches[0][2], 10) : 0;
-      const endH = parseInt(matches[1][1], 10);
-      const endM = matches[1][2] ? parseInt(matches[1][2], 10) : 0;
-
-      const startTimeVal = startH * 60 + startM;
-      let endTimeVal = endH * 60 + endM;
-
-      if (endTimeVal <= startTimeVal) {
-        endTimeVal += 24 * 60;
-      }
-      
-      const adjustedCurrent = currentTimeVal < startTimeVal && endTimeVal > 24 * 60 ? currentTimeVal + 24 * 60 : currentTimeVal;
-
-      const open = adjustedCurrent >= startTimeVal && adjustedCurrent <= endTimeVal;
-      return open
-        ? { isOpen: true, label: 'Aberto agora', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
-        : { isOpen: false, label: 'Fechado no momento', badgeColor: 'bg-neutral-100 text-neutral-600 border-neutral-200' };
-    }
-
-    return { isOpen: true, label: 'Horário regular', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    return { isOpen: true, label: 'Horário definido', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
   };
 
   const openStatus = getOpenStatus(establishment.operatingHours);
@@ -114,8 +70,6 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
   const fullAddressQuery = `${establishment.address}, ${establishment.city} - ${establishment.state}, Brasil`;
   const mapExternalUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddressQuery)}`;
   const mapRouteUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddressQuery)}`;
-
-
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -131,7 +85,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
             aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
@@ -164,20 +118,10 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
             {establishment.operatingHours && (
               <div className="mt-2.5 flex items-center gap-2 text-xs text-neutral-700 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-200">
                 <Clock className="w-4 h-4 text-[#d32f2f] shrink-0" />
-                <span><strong>Horário de Funcionamento:</strong> {establishment.operatingHours}</span>
+                <span><strong>Horário:</strong> {Object.entries(establishment.operatingHours).filter(([_, h]) => h.isOpen).map(([d, h]) => `${d.charAt(0).toUpperCase() + d.slice(1)}: ${h.open}-${h.close}`).join(', ')}</span>
               </div>
             )}
           </div>
-
-          {/* Curadoria: Categoria Sugerida */}
-          {establishment.suggestedCategory && isAdmin && (
-            <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs text-amber-950 flex items-center gap-2">
-              <span className="text-sm" aria-hidden="true">💡</span>
-              <span>
-                <strong>Sugestão original de categoria:</strong> "{establishment.suggestedCategory}"
-              </span>
-            </div>
-          )}
 
           {/* Social / Solidarity Manifesto */}
           <div className="bg-neutral-50 rounded-xl p-4.5 border border-neutral-200">
@@ -254,7 +198,6 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
               <span>Traçar Rota GPS</span>
             </a>
           </div>
-
 
           {/* Social Contact Buttons */}
           {(establishment.instagram || establishment.whatsapp || establishment.website) && (
@@ -341,15 +284,13 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
 
               <button
                 onClick={handleCopyLink}
-                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors"
+                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors cursor-pointer"
               >
                 <Copy className="w-3.5 h-3.5 text-neutral-500" />
                 <span>{copied ? 'Copiado!' : 'Copiar Link'}</span>
               </button>
             </div>
           </div>
-
-
 
           {/* Edit / Remove Management (VISIBLE ONLY FOR ADMIN/CURATORS) */}
           {isAdmin && (
@@ -365,7 +306,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
                     onEdit(establishment);
                     onClose();
                   }}
-                  className="text-xs text-neutral-700 hover:text-neutral-900 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white border border-neutral-200 hover:bg-neutral-50"
+                  className="text-xs text-neutral-700 hover:text-neutral-900 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white border border-neutral-200 hover:bg-neutral-50 cursor-pointer"
                 >
                   <Edit3 className="w-3 h-3" />
                   <span>Editar</span>
