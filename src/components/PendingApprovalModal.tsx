@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Check, Trash2, Edit3, MapPin, AlertCircle, Clock } from 'lucide-react';
 import { Establishment } from '../types';
 import { CATEGORIES } from '../utils/categories';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface PendingApprovalModalProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
   onReject,
   onEdit,
 }) => {
+  const [rejectingItem, setRejectingItem] = useState<Establishment | null>(null);
+
   if (!isOpen) return null;
 
   return (
@@ -162,8 +165,8 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
                     {/* Action buttons */}
                     <div className="pt-3 border-t border-neutral-200/60 flex items-center justify-end gap-2">
                       <button
-                        onClick={() => onReject(item.id)}
-                        className="px-3 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        onClick={() => setRejectingItem(item)}
+                        className="px-3 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors font-medium flex items-center gap-1 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Recusar</span>
@@ -174,7 +177,7 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
                           onClose();
                           onEdit(item);
                         }}
-                        className="px-3 py-1.5 text-xs text-neutral-700 hover:text-neutral-900 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        className="px-3 py-1.5 text-xs text-neutral-700 hover:text-neutral-900 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors font-medium flex items-center gap-1 cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Editar antes de aprovar</span>
@@ -182,7 +185,7 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
 
                       <button
                         onClick={() => onApprove(item.id)}
-                        className="px-4 py-1.5 text-xs text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors font-bold flex items-center gap-1 shadow-2xs"
+                        className="px-4 py-1.5 text-xs text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors font-bold flex items-center gap-1 shadow-2xs cursor-pointer"
                       >
                         <Check className="w-4 h-4 stroke-[2.5]" />
                         <span>Aprovar & Publicar</span>
@@ -194,6 +197,22 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
             </div>
           )}
         </div>
+
+        {/* Confirmation modal for rejection */}
+        <ConfirmDeleteModal
+          isOpen={Boolean(rejectingItem)}
+          title="Confirmar Recusa de Cadastro"
+          establishmentName={rejectingItem?.name}
+          message={`Tem certeza de que deseja recusar e excluir o cadastro pendente de "${rejectingItem?.name}"?`}
+          confirmText="Sim, Recusar Cadastro"
+          onConfirm={() => {
+            if (rejectingItem) {
+              onReject(rejectingItem.id);
+              setRejectingItem(null);
+            }
+          }}
+          onClose={() => setRejectingItem(null)}
+        />
       </div>
     </div>
   );

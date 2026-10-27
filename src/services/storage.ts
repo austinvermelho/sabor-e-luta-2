@@ -222,6 +222,35 @@ export const deleteEstablishment = (id: string): Establishment[] => {
   return updated;
 };
 
+// Async Curator Helpers guaranteeing server disk write and immediate reflection
+export const approveEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  const localUpdated = approveEstablishment(id);
+  const target = localUpdated.find((e) => e.id === id);
+  if (target) {
+    const serverItems = await syncEstablishmentToAPI(target);
+    if (serverItems) return serverItems;
+  }
+  return localUpdated;
+};
+
+export const rejectEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  const localUpdated = rejectEstablishment(id);
+  const serverItems = await deleteEstablishmentFromAPI(id);
+  return serverItems || localUpdated;
+};
+
+export const deleteEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  const localUpdated = deleteEstablishment(id);
+  const serverItems = await deleteEstablishmentFromAPI(id);
+  return serverItems || localUpdated;
+};
+
+export const saveEstablishmentAsync = async (item: Establishment, isEdit: boolean): Promise<Establishment[]> => {
+  const localUpdated = isEdit ? updateEstablishment(item) : addEstablishment(item);
+  const serverItems = await syncEstablishmentToAPI(item);
+  return serverItems || localUpdated;
+};
+
 // Exportação e Importação de base de dados
 export const exportCatalogJSON = (items: Establishment[]): void => {
   const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(items, null, 2));

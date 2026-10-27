@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Establishment } from '../types';
 import { CATEGORIES } from '../utils/categories';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface EstablishmentModalProps {
   establishment: Establishment | null;
@@ -370,36 +371,27 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
                   <span>Editar</span>
                 </button>
 
-                {confirmDelete ? (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => {
-                        onDelete(establishment.id);
-                        onClose();
-                      }}
-                      className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      onClick={() => setConfirmDelete(false)}
-                      className="px-2 py-1 text-xs text-neutral-600 hover:bg-neutral-100 rounded"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDelete(true)}
-                    className="text-xs text-red-600 hover:text-red-700 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white border border-red-200 hover:bg-red-50"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Excluir</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-xs text-red-600 hover:text-red-700 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white border border-red-200 hover:bg-red-50 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Excluir</span>
+                </button>
               </div>
             </div>
           )}
+
+          {/* Confirm Delete Accessible Modal */}
+          <ConfirmDeleteModal
+            isOpen={confirmDelete}
+            establishmentName={establishment.name}
+            onConfirm={() => {
+              onDelete(establishment.id);
+              onClose();
+            }}
+            onClose={() => setConfirmDelete(false)}
+          />
 
         </div>
       </div>

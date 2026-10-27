@@ -21,6 +21,10 @@ import {
   deleteEstablishment,
   approveEstablishment,
   rejectEstablishment,
+  saveEstablishmentAsync,
+  approveEstablishmentAsync,
+  rejectEstablishmentAsync,
+  deleteEstablishmentAsync,
   getAdSenseConfig,
   getProjectSupportConfig,
   getAdminPin,
@@ -201,19 +205,20 @@ export default function App() {
   const availableStates = Array.from(new Set(approvedEstablishments.map((e) => e.state))).sort();
 
   // Handlers for establishments
-  const handleSaveEstablishment = (data: Establishment) => {
-    let updated: Establishment[];
-    if (editingItem) {
-      updated = updateEstablishment(data);
+  const handleSaveEstablishment = async (data: Establishment) => {
+    const isEdit = Boolean(editingItem);
+    const updated = await saveEstablishmentAsync(data, isEdit);
+
+    if (isEdit) {
       showToast(`"${data.name}" atualizado com sucesso.`);
     } else {
-      updated = addEstablishment(data);
       if (isAdmin) {
         showToast(`"${data.name}" cadastrado e publicado no guia!`);
       } else {
         showToast(`"${data.name}" enviado com sucesso para a aprovação da moderação!`);
       }
     }
+
     setEstablishments(updated);
     if (activeModalItem && activeModalItem.id === data.id) {
       setActiveModalItem(data);
@@ -226,8 +231,8 @@ export default function App() {
     setPickedCoordinates(null);
   };
 
-  const handleApproveEstablishment = (id: string) => {
-    const updated = approveEstablishment(id);
+  const handleApproveEstablishment = async (id: string) => {
+    const updated = await approveEstablishmentAsync(id);
     setEstablishments(updated);
     if (activeModalItem && activeModalItem.id === id) {
       const target = updated.find((e) => e.id === id);
@@ -238,15 +243,15 @@ export default function App() {
     showToast('Espaço aprovado com sucesso! Publicado no mapa e catálogo público.');
   };
 
-  const handleRejectEstablishment = (id: string) => {
-    const updated = rejectEstablishment(id);
+  const handleRejectEstablishment = async (id: string) => {
+    const updated = await rejectEstablishmentAsync(id);
     setEstablishments(updated);
     if (activeModalItem?.id === id) setActiveModalItem(null);
     showToast('Cadastro recusado e removido da moderação.');
   };
 
-  const handleDeleteEstablishment = (id: string) => {
-    const updated = deleteEstablishment(id);
+  const handleDeleteEstablishment = async (id: string) => {
+    const updated = await deleteEstablishmentAsync(id);
     setEstablishments(updated);
     if (selectedId === id) setSelectedId(null);
     if (activeModalItem?.id === id) setActiveModalItem(null);
