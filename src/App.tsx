@@ -41,8 +41,8 @@ import { SiteDisclaimer } from './components/SiteDisclaimer';
 import { CATEGORIES } from './utils/categories';
 
 export default function App() {
-  // Establishments state - strictly loads from localStorage, starts empty if new
-  const [establishments, setEstablishments] = useState<Establishment[]>([]);
+  // Establishments state - initialized from local storage then updated from central API
+  const [establishments, setEstablishments] = useState<Establishment[]>(getEstablishments);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeModalItem, setActiveModalItem] = useState<Establishment | null>(null);
   
@@ -133,17 +133,17 @@ export default function App() {
     };
   }, [initialVersion]);
 
-  // Load from central API server with localStorage fallback on mount
+  // Load from central API server with local fallback on mount
   useEffect(() => {
-    const initial = getEstablishments();
-    if (initial.length > 0) {
-      setEstablishments(initial);
-    }
+    let isMounted = true;
     fetchEstablishmentsAsync().then((items) => {
-      if (items && items.length > 0) {
+      if (isMounted && items && items.length > 0) {
         setEstablishments(items);
       }
     });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const showToast = (msg: string) => {
@@ -707,15 +707,6 @@ export default function App() {
             >
               <span>Contato: saboreluta@gmail.com</span>
             </a>
-
-            <button
-              onClick={clearLocalCacheAndReload}
-              className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors inline-flex items-center gap-1 text-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#d32f2f] rounded"
-              title="Limpar o armazenamento local e buscar os dados mais recentes do servidor"
-            >
-              <RotateCcw className="w-3 h-3 text-[#d32f2f]" aria-hidden="true" />
-              <span>Sincronizar / Limpar Cache</span>
-            </button>
 
             {/* Discreet Curator Entry */}
             {!isAdmin ? (

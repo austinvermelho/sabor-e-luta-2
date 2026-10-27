@@ -14,12 +14,13 @@ const BUILD_TIME = Date.now();
 
 app.use(express.json());
 
-// Set Cache-Control headers to ensure HTML entry point is never stale
+// Set Cache-Control headers to ensure HTML entry point and all API routes are never cached
 app.use((req, res, next) => {
-  if (req.path === '/' || req.path === '/index.html') {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  if (req.path.startsWith('/api') || req.path === '/' || req.path === '/index.html') {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
   }
   next();
 });

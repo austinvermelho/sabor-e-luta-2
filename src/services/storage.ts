@@ -101,7 +101,13 @@ export const clearLocalCacheAndReload = (): void => {
 // Async fetch from central API server (for multi-device / multi-user persistence)
 export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
   try {
-    const res = await fetch('/api/establishments');
+    const res = await fetch(`/api/establishments?_t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -111,7 +117,7 @@ export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
         } else {
           // If server database is empty, seed defaults and sync
           saveEstablishmentsLocally(SUGGESTED_EXAMPLES);
-          fetch('/api/establishments/bulk', {
+          await fetch('/api/establishments/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(SUGGESTED_EXAMPLES),
@@ -134,31 +140,47 @@ export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
 };
 
 // Async API persistence sync
-export const syncEstablishmentToAPI = async (item: Establishment) => {
+export const syncEstablishmentToAPI = async (item: Establishment): Promise<Establishment[] | null> => {
   try {
-    await fetch('/api/establishments', {
+    const res = await fetch('/api/establishments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item),
     });
+    if (res.ok) {
+      const result = await res.json();
+      if (result && Array.isArray(result.items)) {
+        saveEstablishmentsLocally(result.items);
+        return result.items;
+      }
+    }
   } catch (err) {
     console.warn('Não foi possível sincronizar com o servidor central:', err);
   }
+  return null;
 };
 
-export const deleteEstablishmentFromAPI = async (id: string) => {
+export const deleteEstablishmentFromAPI = async (id: string): Promise<Establishment[] | null> => {
   try {
-    await fetch(`/api/establishments/${id}`, {
+    const res = await fetch(`/api/establishments/${id}`, {
       method: 'DELETE',
     });
+    if (res.ok) {
+      const result = await res.json();
+      if (result && Array.isArray(result.items)) {
+        saveEstablishmentsLocally(result.items);
+        return result.items;
+      }
+    }
   } catch (err) {
     console.warn('Não foi possível remover no servidor central:', err);
   }
+  return null;
 };
 
 export const addEstablishment = (item: Establishment): Establishment[] => {
   const current = getEstablishmentsLocally();
-  const updated = [item, ...current];
+  const updated = [item, ...current.filter((e) => e.id !== item.id)];
   saveEstablishmentsLocally(updated);
   syncEstablishmentToAPI(item);
   return updated;
