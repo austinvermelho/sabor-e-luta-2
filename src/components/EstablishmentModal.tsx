@@ -110,13 +110,10 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
 
   const openStatus = getOpenStatus(establishment.operatingHours);
 
-  const hasCoordinates = typeof establishment.latitude === 'number' && typeof establishment.longitude === 'number' && !isNaN(establishment.latitude) && !isNaN(establishment.longitude);
+  const fullAddressQuery = `${establishment.address}, ${establishment.city} - ${establishment.state}, Brasil`;
+  const mapExternalUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddressQuery)}`;
+  const mapRouteUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddressQuery)}`;
 
-  const mapExternalUrl = hasCoordinates
-    ? `https://www.google.com/maps/search/?api=1&query=${establishment.latitude},${establishment.longitude}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        `${establishment.address}, ${establishment.city} - ${establishment.state}`
-      )}`;
 
 
   return (
@@ -224,28 +221,39 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
           )}
 
           {/* Map Navigation Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
             <button
               onClick={() => {
                 onFocusOnMap(establishment.latitude, establishment.longitude);
                 onClose();
               }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors cursor-pointer"
             >
               <Navigation2 className="w-3.5 h-3.5 text-[#d32f2f]" />
-              <span>Ver no Mapa da Plataforma</span>
+              <span>Mapa da Plataforma</span>
             </button>
 
             <a
               href={mapExternalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-neutral-500" />
-              <span>Rota no Google Maps</span>
+              <ExternalLink className="w-3.5 h-3.5 text-neutral-600" />
+              <span>Ver no Google Maps</span>
+            </a>
+
+            <a
+              href={mapRouteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-red-200 bg-red-50/70 text-red-900 hover:bg-red-100 text-xs font-semibold transition-colors"
+            >
+              <Navigation2 className="w-3.5 h-3.5 text-[#d32f2f]" />
+              <span>Traçar Rota GPS</span>
             </a>
           </div>
+
 
           {/* Social Contact Buttons */}
           {(establishment.instagram || establishment.whatsapp || establishment.website) && (

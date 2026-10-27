@@ -22,7 +22,8 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
     icon: '🚩',
   };
 
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${establishment.latitude},${establishment.longitude}`;
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${establishment.address}, ${establishment.city} - ${establishment.state}, Brasil`)}`;
+
 
   return (
     <div

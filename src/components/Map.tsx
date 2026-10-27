@@ -189,7 +189,7 @@ export const Map: React.FC<MapProps> = ({
           <button id="btn-details-${item.id}" class="bg-[#d32f2f] hover:bg-[#b71c1c] text-white text-[11px] font-bold py-1.5 px-2.5 rounded transition-colors flex-1 text-center cursor-pointer">
             Ver Detalhes
           </button>
-          <a href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}" target="_blank" rel="noopener noreferrer" class="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[11px] font-medium py-1.5 px-2 rounded transition-colors inline-flex items-center justify-center gap-1">
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${item.address}, ${item.city} - ${item.state}, Brasil`)}" target="_blank" rel="noopener noreferrer" class="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[11px] font-medium py-1.5 px-2 rounded transition-colors inline-flex items-center justify-center gap-1">
             <span>Rota</span>
           </a>
         </div>
