@@ -35,6 +35,7 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { PendingApprovalModal } from './components/PendingApprovalModal';
 import { EmptyState } from './components/EmptyState';
 import { MissionSection } from './components/MissionSection';
+import { SiteDisclaimer } from './components/SiteDisclaimer';
 import { CATEGORIES } from './utils/categories';
 
 export default function App() {
@@ -259,6 +260,17 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4">
         
+        {/* Top Site Explanation Disclaimer */}
+        <SiteDisclaimer
+          onOpenRegister={() => {
+            setEditingItem(null);
+            setIsRegisterOpen(true);
+          }}
+          onOpenMission={() => {
+            setActiveTab('mission');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
 
         {/* Picking Coordinates Floating Banner */}
         {isPickingCoord && (
