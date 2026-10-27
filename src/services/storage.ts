@@ -47,7 +47,7 @@ export const saveProjectSupportConfig = (config: ProjectSupportConfig): void => 
   }
 };
 
-// Ler todos os estabelecimentos do localStorage (garantindo status válido)
+// Ler todos os estabelecimentos do localStorage (garantindo status e coordenadas válidos)
 export const getEstablishments = (): Establishment[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -58,7 +58,9 @@ export const getEstablishments = (): Establishment[] => {
     if (!Array.isArray(parsed)) return [];
     return parsed.map((e: any) => ({
       ...e,
-      status: e.status || 'approved',
+      latitude: typeof e.latitude === 'number' ? e.latitude : parseFloat(e.latitude) || 0,
+      longitude: typeof e.longitude === 'number' ? e.longitude : parseFloat(e.longitude) || 0,
+      status: e.status === 'pending' ? 'pending' : 'approved',
     }));
   } catch (error) {
     console.error('Erro ao ler estabelecimentos do localStorage:', error);

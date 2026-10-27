@@ -223,7 +223,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       website: website.trim() || undefined,
       suggestedCategory: isSuggestingCategory && suggestedCategory.trim() ? suggestedCategory.trim() : undefined,
       suggestedTags: suggestedTags.length > 0 ? suggestedTags : undefined,
-      status: isAdmin ? (initialData?.status || 'approved') : 'pending',
+      status: isAdmin ? 'approved' : 'pending',
       createdAt: initialData?.createdAt || new Date().toISOString(),
     };
 

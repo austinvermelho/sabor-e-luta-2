@@ -177,7 +177,9 @@ export default function App() {
   const handleApproveEstablishment = (id: string) => {
     const updated = approveEstablishment(id);
     setEstablishments(updated);
-    showToast('Espaço aprovado com sucesso! Agora está visível no mapa público.');
+    setSelectedId(id);
+    resetFilters();
+    showToast('Espaço aprovado com sucesso! Publicado no mapa e catálogo público.');
   };
 
   const handleRejectEstablishment = (id: string) => {
