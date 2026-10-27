@@ -92,6 +92,46 @@ export default function App() {
   // Notification toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Live version checking state
+  const [hasNewVersion, setHasNewVersion] = useState(false);
+  const [initialVersion, setInitialVersion] = useState<number | null>(null);
+
+  // Poll /api/version to detect new site deployments
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkVersion = async () => {
+      try {
+        const res = await fetch('/api/version');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.version) {
+          if (initialVersion === null) {
+            setInitialVersion(data.version);
+          } else if (data.version > initialVersion && isMounted) {
+            setHasNewVersion(true);
+          }
+        }
+      } catch (err) {
+        // Silent catch for network hiccups
+      }
+    };
+
+    checkVersion();
+    const interval = setInterval(checkVersion, 45000);
+
+    const handleFocus = () => {
+      checkVersion();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [initialVersion]);
+
   // Load from central API server with localStorage fallback on mount
   useEffect(() => {
     const initial = getEstablishments();
@@ -242,6 +282,32 @@ export default function App() {
   return (
     <div className={darkMode ? 'dark min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-rose-900 selection:text-rose-100 transition-colors' : 'min-h-screen bg-[#faf5f5] bg-gradient-to-b from-rose-50/25 via-[#faf5f5] to-rose-50/15 flex flex-col font-sans text-neutral-900 selection:bg-rose-200 selection:text-rose-950 transition-colors'}>
       
+      {/* WCAG 2.1 AA Skip to Content Link for Keyboard Navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[#d32f2f] focus:text-white focus:font-bold focus:rounded-xl focus:shadow-2xl focus:ring-4 focus:ring-amber-300 transition-all"
+      >
+        Pular para o conteúdo principal
+      </a>
+
+      {/* Live Site Version Update Alert */}
+      {hasNewVersion && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-[#d32f2f] text-white py-2 px-4 text-xs font-semibold text-center flex items-center justify-center gap-2 shadow-md border-b border-rose-900 z-50 animate-in slide-in-from-top duration-300"
+        >
+          <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" aria-hidden="true" />
+          <span>Uma nova versão do <strong>Sabor &amp; Luta</strong> está disponível!</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 bg-white hover:bg-rose-50 text-[#d32f2f] font-bold px-3 py-1 rounded-md text-[11px] shadow-2xs transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-300"
+          >
+            Atualizar Agora
+          </button>
+        </div>
+      )}
+
       {/* Clean Minimalist Header */}
       <Header
         onOpenRegister={() => {
@@ -255,20 +321,25 @@ export default function App() {
         pendingCount={pendingEstablishments.length}
         onOpenPending={() => setIsPendingModalOpen(true)}
         onLogoutAdmin={handleLogoutAdmin}
+        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
         darkMode={darkMode}
         onToggleDarkMode={toggleDarkMode}
       />
 
-      {/* Toast Notification */}
+      {/* Accessible Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-neutral-900/95 backdrop-blur-sm text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-rose-900/60 flex items-center gap-2 animate-in slide-in-from-bottom-4">
-          <Sparkles className="w-3.5 h-3.5 text-[#fbc02d]" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-5 right-5 z-50 bg-neutral-900/95 backdrop-blur-sm text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-rose-900/60 flex items-center gap-2 animate-in slide-in-from-bottom-4"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-[#fbc02d]" aria-hidden="true" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4 focus:outline-none">
         
         {/* Top Site Explanation Disclaimer */}
         <SiteDisclaimer
@@ -364,68 +435,77 @@ export default function App() {
           />
         ) : (
           <>
-            {/* Minimalist Filter Bar with soft red tones */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-xl border border-rose-200/70 p-3 sm:p-3.5 shadow-2xs">
+            {/* Minimalist Filter Bar with WCAG contrast */}
+            <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xs rounded-xl border border-rose-200/70 dark:border-neutral-800 p-3 sm:p-3.5 shadow-2xs">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
                 
                 {/* Search Input */}
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Buscar por nome, bairro, cidade ou proposta (ex: agroecologia, autogestão, samba)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9.5 pr-4 py-2 text-xs sm:text-sm rounded-lg border border-rose-200/80 focus:outline-none focus:border-[#d32f2f] focus:ring-1 focus:ring-[#d32f2f]/30 transition-all bg-rose-50/25 text-neutral-800 placeholder:text-neutral-400"
-              />
+                  <Search className="w-4 h-4 text-rose-500 dark:text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                  <label htmlFor="search-input" className="sr-only">Buscar estabelecimentos no guia</label>
+                  <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Buscar por nome, bairro, cidade ou proposta (ex: agroecologia, autogestão, samba)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9.5 pr-4 py-2 text-xs sm:text-sm rounded-lg border border-rose-200/80 dark:border-neutral-700 focus:outline-none focus:border-[#d32f2f] dark:focus:border-rose-400 focus:ring-2 focus:ring-[#d32f2f]/30 transition-all bg-rose-50/25 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
+                  />
+                </div>
+
+                {/* Filter Dropdowns */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Category Select */}
+                  <label htmlFor="category-select" className="sr-only">Filtrar por Categoria</label>
+                  <select
+                    id="category-select"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="px-3 py-2 text-xs rounded-lg border border-rose-200/80 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-medium text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-[#d32f2f]"
+                  >
+                    <option value="all">Todas as Categorias</option>
+                    {Object.values(CATEGORIES).map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.icon} {cat.shortLabel}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* State Select */}
+                  {availableStates.length > 0 && (
+                    <>
+                      <label htmlFor="state-select" className="sr-only">Filtrar por Estado</label>
+                      <select
+                        id="state-select"
+                        value={selectedState}
+                        onChange={(e) => setSelectedState(e.target.value)}
+                        className="px-3 py-2 text-xs rounded-lg border border-rose-200/80 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-medium text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-[#d32f2f]"
+                      >
+                        <option value="all">Todos os Estados</option>
+                        {availableStates.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+
+                  {/* Reset filter if active */}
+                  {(searchQuery || selectedCategory !== 'all' || selectedState !== 'all') && (
+                    <button
+                      onClick={resetFilters}
+                      aria-label="Limpar todos os filtros de busca"
+                      title="Limpar filtros"
+                      className="p-2 text-rose-600 dark:text-rose-400 hover:text-[#d32f2f] rounded-lg hover:bg-rose-50 dark:hover:bg-neutral-800 transition-colors focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+
+              </div>
             </div>
-
-            {/* Filter Dropdowns */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Category Select */}
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 text-xs rounded-lg border border-rose-200/80 bg-white font-medium text-neutral-700 focus:outline-none focus:border-[#d32f2f]"
-              >
-                <option value="all">Todas as Categorias</option>
-                {Object.values(CATEGORIES).map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.shortLabel}
-                  </option>
-                ))}
-              </select>
-
-              {/* State Select */}
-              {availableStates.length > 0 && (
-                <select
-                  value={selectedState}
-                  onChange={(e) => setSelectedState(e.target.value)}
-                  className="px-3 py-2 text-xs rounded-lg border border-rose-200/80 bg-white font-medium text-neutral-700 focus:outline-none focus:border-[#d32f2f]"
-                >
-                  <option value="all">Todos os Estados</option>
-                  {availableStates.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              {/* Reset filter if active */}
-              {(searchQuery || selectedCategory !== 'all' || selectedState !== 'all') && (
-                <button
-                  onClick={resetFilters}
-                  title="Limpar filtros"
-                  className="p-2 text-rose-500 hover:text-[#d32f2f] rounded-lg hover:bg-rose-50 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-          </div>
-        </div>
 
         {/* Empty State when no approved establishments exist */}
         {approvedEstablishments.length === 0 ? (

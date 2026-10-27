@@ -10,7 +10,19 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'establishments.json');
 
+const BUILD_TIME = Date.now();
+
 app.use(express.json());
+
+// Set Cache-Control headers to ensure HTML entry point is never stale
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/index.html') {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
 
 // Helper to read persistent establishments
 function readEstablishmentsData(): any[] {
@@ -41,6 +53,10 @@ function writeEstablishmentsData(data: any[]): void {
 }
 
 // API Routes
+app.get('/api/version', (req, res) => {
+  res.json({ version: BUILD_TIME, timestamp: new Date(BUILD_TIME).toISOString() });
+});
+
 app.get('/api/establishments', (req, res) => {
   const items = readEstablishmentsData();
   res.json(items);
