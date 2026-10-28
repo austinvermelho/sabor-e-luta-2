@@ -15,6 +15,7 @@ import { Establishment, AdSenseConfig, ProjectSupportConfig } from './types';
 import { 
   getEstablishments, 
   fetchEstablishmentsAsync,
+  subscribeToEstablishments,
   saveEstablishments, 
   saveEstablishmentAsync,
   approveEstablishmentAsync,
@@ -117,16 +118,18 @@ export default function App() {
     };
   }, [initialVersion]);
 
-  // Load from central API server with local fallback on mount
+  // Real-time synchronization of establishments from Firestore with server fallback
   useEffect(() => {
     let isMounted = true;
-    fetchEstablishmentsAsync().then((items) => {
+    const unsubscribe = subscribeToEstablishments((items) => {
       if (isMounted && Array.isArray(items)) {
         setEstablishments(items);
       }
     });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, []);
 
@@ -306,7 +309,12 @@ export default function App() {
         count={approvedEstablishments.length}
         isAdmin={isAdmin}
         pendingCount={pendingEstablishments.length}
-        onOpenPending={() => setIsPendingModalOpen(true)}
+        onOpenPending={() => {
+          fetchEstablishmentsAsync().then((items) => {
+            if (Array.isArray(items)) setEstablishments(items);
+          });
+          setIsPendingModalOpen(true);
+        }}
         onLogoutAdmin={handleLogoutAdmin}
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
       />
@@ -703,7 +711,12 @@ export default function App() {
             ) : (
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setIsPendingModalOpen(true)}
+                  onClick={() => {
+                    fetchEstablishmentsAsync().then((items) => {
+                      if (Array.isArray(items)) setEstablishments(items);
+                    });
+                    setIsPendingModalOpen(true);
+                  }}
                   className="text-amber-800 font-bold hover:underline"
                 >
                   Moderação ({pendingEstablishments.length})
@@ -757,6 +770,11 @@ export default function App() {
         onEdit={(item) => {
           setEditingItem(item);
           setIsRegisterOpen(true);
+        }}
+        onRefresh={() => {
+          fetchEstablishmentsAsync().then((items) => {
+            if (Array.isArray(items)) setEstablishments(items);
+          });
         }}
       />
 

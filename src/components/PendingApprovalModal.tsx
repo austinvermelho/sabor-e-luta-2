@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Trash2, Edit3, MapPin, AlertCircle, Clock } from 'lucide-react';
+import { X, Check, Trash2, Edit3, MapPin, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { Establishment } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
@@ -11,6 +11,7 @@ interface PendingApprovalModalProps {
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onEdit: (item: Establishment) => void;
+  onRefresh?: () => void;
 }
 
 export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
@@ -20,8 +21,18 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
   onApprove,
   onReject,
   onEdit,
+  onRefresh,
 }) => {
   const [rejectingItem, setRejectingItem] = useState<Establishment | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshClick = () => {
+    if (onRefresh) {
+      setIsRefreshing(true);
+      onRefresh();
+      setTimeout(() => setIsRefreshing(false), 600);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -46,12 +57,23 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
               </span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-200/50"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onRefresh && (
+              <button
+                onClick={handleRefreshClick}
+                title="Atualizar lista de cadastros"
+                className="p-1.5 text-stone-500 hover:text-[#b91c1c] rounded-full hover:bg-stone-200/50 transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-200/50 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

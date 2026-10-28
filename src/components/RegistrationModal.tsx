@@ -209,13 +209,13 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       latitude: latNum,
       longitude: lngNum,
       description: description.trim(),
-      history: history.trim() || undefined,
-      operatingHours: operatingHours,
-      instagram: instagram.trim() || undefined,
-      whatsapp: whatsapp.trim() || undefined,
-      website: website.trim() || undefined,
+      operatingHours,
       status: initialData ? initialData.status : (isAdmin ? 'approved' : 'pending'),
       createdAt: initialData?.createdAt || new Date().toISOString(),
+      ...(history.trim() ? { history: history.trim() } : {}),
+      ...(instagram.trim() ? { instagram: instagram.trim() } : {}),
+      ...(whatsapp.trim() ? { whatsapp: whatsapp.trim() } : {}),
+      ...(website.trim() ? { website: website.trim() } : {}),
     };
 
     onSave(payload);

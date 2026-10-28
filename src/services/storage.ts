@@ -58,111 +58,172 @@ export const saveProjectSupportConfig = (config: ProjectSupportConfig): void => 
 const ESTABLISHMENTS_COL = collection(db, 'establishments');
 const MOCK_EXAMPLE_IDS = ['ex-armazem-campo-sp', 'ex-al-janiah-sp', 'ex-ordinario-bar'];
 
+export const sanitizeForFirestore = (obj: any): any => {
+  if (obj === null || obj === undefined) return null;
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeForFirestore).filter((item) => item !== undefined && item !== null);
+  }
+  if (typeof obj === 'object') {
+    const res: Record<string, any> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        res[key] = sanitizeForFirestore(value);
+      }
+    }
+    return res;
+  }
+  return obj;
+};
+
 export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
+  const itemsMap = new Map<string, Establishment>();
+  let firestoreFailed = false;
+
   try {
     const snapshot = await getDocs(ESTABLISHMENTS_COL);
-    const items: Establishment[] = [];
     for (const docSnap of snapshot.docs) {
       if (MOCK_EXAMPLE_IDS.includes(docSnap.id) || docSnap.id.startsWith('ex-')) {
         deleteDoc(docSnap.ref).catch(() => {});
       } else {
-        items.push(docSnap.data() as Establishment);
+        const data = docSnap.data() as Establishment;
+        if (data && data.id) {
+          itemsMap.set(data.id, data);
+        }
       }
     }
-    return items;
   } catch (err) {
-    console.error('Erro ao buscar do Firestore, tentando fallback do servidor:', err);
-    try {
-      const res = await fetch('/api/establishments');
-      if (res.ok) {
-        const serverItems = await res.json();
-        if (Array.isArray(serverItems)) return serverItems;
-      }
-    } catch (serverErr) {
-      console.error('Erro no fallback do servidor:', serverErr);
-    }
-    return [];
+    console.error('Erro ao buscar do Firestore:', err);
+    firestoreFailed = true;
   }
+
+  // Also query server fallback to ensure no submissions are lost
+  try {
+    const res = await fetch('/api/establishments');
+    if (res.ok) {
+      const serverItems = await res.json();
+      if (Array.isArray(serverItems)) {
+        for (const sItem of serverItems) {
+          if (sItem && sItem.id && !MOCK_EXAMPLE_IDS.includes(sItem.id) && !sItem.id.startsWith('ex-')) {
+            if (!itemsMap.has(sItem.id)) {
+              itemsMap.set(sItem.id, sItem);
+              // Backfill into Firestore if Firestore is accessible
+              if (!firestoreFailed) {
+                setDoc(doc(ESTABLISHMENTS_COL, sItem.id), sanitizeForFirestore(sItem)).catch(() => {});
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (serverErr) {
+    // Silent catch for server fallback
+  }
+
+  return Array.from(itemsMap.values());
 };
 
-export const syncEstablishmentToAPI = async (item: Establishment): Promise<Establishment[] | null> => {
+export const syncEstablishmentToAPI = async (item: Establishment): Promise<Establishment[]> => {
+  const sanitized = sanitizeForFirestore(item);
+
+  // 1. Write to Firestore
   try {
-    await setDoc(doc(ESTABLISHMENTS_COL, item.id), item);
-    // Mirror to server endpoint in background
-    fetch('/api/establishments', {
+    await setDoc(doc(ESTABLISHMENTS_COL, item.id), sanitized);
+  } catch (err) {
+    console.error('Erro ao salvar no Firestore:', err);
+  }
+
+  // 2. Mirror to server endpoint
+  try {
+    await fetch('/api/establishments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
-    }).catch(() => {});
-    return await fetchEstablishmentsAsync();
-  } catch (err) {
-    console.error('Erro ao salvar no Firestore, usando fallback do servidor:', err);
-    try {
-      const res = await fetch('/api/establishments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data.items || [];
-      }
-    } catch (serverErr) {
-      console.error('Erro no fallback do servidor:', serverErr);
-    }
-    return null;
+      body: JSON.stringify(sanitized),
+    });
+  } catch (serverErr) {
+    console.error('Erro ao sincronizar com servidor Express:', serverErr);
   }
+
+  return await fetchEstablishmentsAsync();
 };
 
-export const deleteEstablishmentFromAPI = async (id: string): Promise<Establishment[] | null> => {
+export const deleteEstablishmentFromAPI = async (id: string): Promise<Establishment[]> => {
   try {
     await deleteDoc(doc(ESTABLISHMENTS_COL, id));
-    fetch(`/api/establishments/${id}`, { method: 'DELETE' }).catch(() => {});
-    return await fetchEstablishmentsAsync();
   } catch (err) {
-    console.error('Erro ao deletar no Firestore, usando fallback do servidor:', err);
-    try {
-      const res = await fetch(`/api/establishments/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        const data = await res.json();
-        return data.items || [];
-      }
-    } catch (serverErr) {
-      console.error('Erro no fallback do servidor:', serverErr);
-    }
-    return null;
+    console.error('Erro ao deletar no Firestore:', err);
   }
+
+  try {
+    await fetch(`/api/establishments/${id}`, { method: 'DELETE' });
+  } catch (serverErr) {
+    console.error('Erro ao deletar no servidor:', serverErr);
+  }
+
+  return await fetchEstablishmentsAsync();
 };
 
-export const saveEstablishmentAsync = async (item: Establishment, isEdit: boolean): Promise<Establishment[]> => {
-  await syncEstablishmentToAPI(item);
-  return await fetchEstablishmentsAsync() || [];
+export const saveEstablishmentAsync = async (item: Establishment, _isEdit: boolean): Promise<Establishment[]> => {
+  return await syncEstablishmentToAPI(item);
 };
 
 export const approveEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
-  // We need to fetch it first to approve it, or pass the object
-  // Simplify: update status in firestore
   const items = await fetchEstablishmentsAsync();
-  const target = items.find(i => i.id === id);
+  const target = items.find((i) => i.id === id);
   if (target) {
-    await syncEstablishmentToAPI({ ...target, status: 'approved' });
+    return await syncEstablishmentToAPI({ ...target, status: 'approved' });
   }
-  return await fetchEstablishmentsAsync() || [];
+  return items;
 };
 
 export const rejectEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
-  await deleteEstablishmentFromAPI(id);
-  return await fetchEstablishmentsAsync() || [];
+  return await deleteEstablishmentFromAPI(id);
 };
 
 export const deleteEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
-  await deleteEstablishmentFromAPI(id);
-  return await fetchEstablishmentsAsync() || [];
+  return await deleteEstablishmentFromAPI(id);
+};
+
+export const subscribeToEstablishments = (
+  callback: (items: Establishment[]) => void
+): (() => void) => {
+  // Initial fetch
+  fetchEstablishmentsAsync().then((items) => {
+    if (items) callback(items);
+  });
+
+  try {
+    const unsubscribe = onSnapshot(
+      ESTABLISHMENTS_COL,
+      (snapshot) => {
+        const itemsMap = new Map<string, Establishment>();
+        for (const docSnap of snapshot.docs) {
+          if (!MOCK_EXAMPLE_IDS.includes(docSnap.id) && !docSnap.id.startsWith('ex-')) {
+            const data = docSnap.data() as Establishment;
+            if (data && data.id) {
+              itemsMap.set(data.id, data);
+            }
+          }
+        }
+        callback(Array.from(itemsMap.values()));
+      },
+      (err) => {
+        console.error('Erro no listener real-time do Firestore:', err);
+        // Fallback: poll server if firestore listener encounters an issue
+        fetchEstablishmentsAsync().then((items) => {
+          if (items) callback(items);
+        });
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.error('Não foi possível iniciar onSnapshot:', err);
+    return () => {};
+  }
 };
 
 // Placeholder for remaining local storage functions for now
 export const getEstablishments = (): Establishment[] => [];
-export const saveEstablishments = (items: Establishment[]): void => {};
+export const saveEstablishments = (_items: Establishment[]): void => {};
 export const clearLocalCacheAndReload = (): void => { window.location.reload(); };
 
 // ... (Keep existing AdSense config and SUGGESTED_EXAMPLES)
