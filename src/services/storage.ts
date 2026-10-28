@@ -71,7 +71,16 @@ export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
     }
     return items;
   } catch (err) {
-    console.error('Erro ao buscar do Firestore:', err);
+    console.error('Erro ao buscar do Firestore, tentando fallback do servidor:', err);
+    try {
+      const res = await fetch('/api/establishments');
+      if (res.ok) {
+        const serverItems = await res.json();
+        if (Array.isArray(serverItems)) return serverItems;
+      }
+    } catch (serverErr) {
+      console.error('Erro no fallback do servidor:', serverErr);
+    }
     return [];
   }
 };
@@ -79,9 +88,28 @@ export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
 export const syncEstablishmentToAPI = async (item: Establishment): Promise<Establishment[] | null> => {
   try {
     await setDoc(doc(ESTABLISHMENTS_COL, item.id), item);
+    // Mirror to server endpoint in background
+    fetch('/api/establishments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    }).catch(() => {});
     return await fetchEstablishmentsAsync();
   } catch (err) {
-    console.error('Erro ao salvar no Firestore:', err);
+    console.error('Erro ao salvar no Firestore, usando fallback do servidor:', err);
+    try {
+      const res = await fetch('/api/establishments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.items || [];
+      }
+    } catch (serverErr) {
+      console.error('Erro no fallback do servidor:', serverErr);
+    }
     return null;
   }
 };
@@ -89,9 +117,19 @@ export const syncEstablishmentToAPI = async (item: Establishment): Promise<Estab
 export const deleteEstablishmentFromAPI = async (id: string): Promise<Establishment[] | null> => {
   try {
     await deleteDoc(doc(ESTABLISHMENTS_COL, id));
+    fetch(`/api/establishments/${id}`, { method: 'DELETE' }).catch(() => {});
     return await fetchEstablishmentsAsync();
   } catch (err) {
-    console.error('Erro ao deletar no Firestore:', err);
+    console.error('Erro ao deletar no Firestore, usando fallback do servidor:', err);
+    try {
+      const res = await fetch(`/api/establishments/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        const data = await res.json();
+        return data.items || [];
+      }
+    } catch (serverErr) {
+      console.error('Erro no fallback do servidor:', serverErr);
+    }
     return null;
   }
 };
