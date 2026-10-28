@@ -11,7 +11,7 @@ import {
   Quote,
   ArrowRight
 } from 'lucide-react';
-import { Establishment, AdSenseConfig, ProjectSupportConfig } from './types';
+import { Establishment, AdSenseConfig, ProjectSupportConfig, Volunteer } from './types';
 import { 
   getEstablishments, 
   fetchEstablishmentsAsync,
@@ -21,6 +21,11 @@ import {
   approveEstablishmentAsync,
   rejectEstablishmentAsync,
   deleteEstablishmentAsync,
+  fetchVolunteersAsync,
+  saveVolunteerAsync,
+  updateVolunteerStatusAsync,
+  deleteVolunteerAsync,
+  subscribeToVolunteers,
   getAdSenseConfig,
   getProjectSupportConfig,
   getAdminPin,
@@ -34,6 +39,8 @@ import { EstablishmentModal } from './components/EstablishmentModal';
 import { RegistrationModal } from './components/RegistrationModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { PendingApprovalModal } from './components/PendingApprovalModal';
+import { VolunteerModal } from './components/VolunteerModal';
+import { VolunteerListModal } from './components/VolunteerListModal';
 import { EmptyState } from './components/EmptyState';
 import { MissionSection } from './components/MissionSection';
 import { SiteDisclaimer } from './components/SiteDisclaimer';
@@ -44,6 +51,12 @@ export default function App() {
   const [establishments, setEstablishments] = useState<Establishment[]>(getEstablishments);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeModalItem, setActiveModalItem] = useState<Establishment | null>(null);
+  
+  // Volunteers state
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
+  const [isVolunteerListModalOpen, setIsVolunteerListModalOpen] = useState(false);
+
   
   // Registration Form State
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -121,17 +134,44 @@ export default function App() {
   // Real-time synchronization of establishments from Firestore with server fallback
   useEffect(() => {
     let isMounted = true;
-    const unsubscribe = subscribeToEstablishments((items) => {
+    const unsubscribeEst = subscribeToEstablishments((items) => {
       if (isMounted && Array.isArray(items)) {
         setEstablishments(items);
       }
     });
 
+    const unsubscribeVol = subscribeToVolunteers((vItems) => {
+      if (isMounted && Array.isArray(vItems)) {
+        setVolunteers(vItems);
+      }
+    });
+
     return () => {
       isMounted = false;
-      unsubscribe();
+      unsubscribeEst();
+      unsubscribeVol();
     };
   }, []);
+
+  // Volunteer Handlers
+  const handleSaveVolunteer = async (vData: Volunteer) => {
+    const updated = await saveVolunteerAsync(vData);
+    setVolunteers(updated);
+    showToast('Inscrição de voluntário(a) recebida com sucesso!');
+  };
+
+  const handleUpdateVolunteerStatus = async (id: string, status: Volunteer['status']) => {
+    const updated = await updateVolunteerStatusAsync(id, status);
+    setVolunteers(updated);
+    showToast('Status do voluntário atualizado!');
+  };
+
+  const handleDeleteVolunteer = async (id: string) => {
+    const updated = await deleteVolunteerAsync(id);
+    setVolunteers(updated);
+    showToast('Voluntário removido.');
+  };
+
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -317,7 +357,16 @@ export default function App() {
         }}
         onLogoutAdmin={handleLogoutAdmin}
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+        onOpenVolunteerModal={() => setIsVolunteerModalOpen(true)}
+        onOpenVolunteerListModal={() => {
+          fetchVolunteersAsync().then((vItems) => {
+            if (Array.isArray(vItems)) setVolunteers(vItems);
+          });
+          setIsVolunteerListModalOpen(true);
+        }}
+        pendingVolunteerCount={volunteers.filter((v) => v.status === 'pending').length}
       />
+
 
       {/* Accessible Toast Notification */}
       {toastMessage && (
@@ -425,8 +474,10 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             establishments={establishments}
+            onOpenVolunteerModal={() => setIsVolunteerModalOpen(true)}
           />
         ) : (
+
           <>
             {/* Minimalist Filter Bar with WCAG contrast */}
             <div className="bg-white rounded-xl border border-[#e4dcce] p-3 sm:p-3.5 shadow-2xs">
@@ -788,6 +839,28 @@ export default function App() {
         onUpdatePin={handleUpdateAdminPin}
       />
 
+      {/* Volunteer Registration Modal (Public) */}
+      <VolunteerModal
+        isOpen={isVolunteerModalOpen}
+        onClose={() => setIsVolunteerModalOpen(false)}
+        onSave={handleSaveVolunteer}
+      />
+
+      {/* Volunteer Management List Modal (Curator/Admin) */}
+      <VolunteerListModal
+        isOpen={isVolunteerListModalOpen}
+        onClose={() => setIsVolunteerListModalOpen(false)}
+        volunteers={volunteers}
+        onUpdateStatus={handleUpdateVolunteerStatus}
+        onDelete={handleDeleteVolunteer}
+        onRefresh={() => {
+          fetchVolunteersAsync().then((vItems) => {
+            if (Array.isArray(vItems)) setVolunteers(vItems);
+          });
+        }}
+      />
+
     </div>
   );
 }
+

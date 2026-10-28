@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, MapPin, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Search, MapPin, Check, AlertCircle, Sparkles, LocateFixed, Loader2 } from 'lucide-react';
 import { Establishment, CategoryType, OperatingHours } from '../types';
 import { CATEGORIES, POPULAR_TAGS } from '../utils/categories';
 import { OperatingHoursSelector } from './OperatingHoursSelector';
@@ -58,8 +58,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   // Geocoding helper states
   const [isSearchingCoord, setIsSearchingCoord] = useState(false);
+  const [isLocatingGPS, setIsLocatingGPS] = useState(false);
   const [coordError, setCoordError] = useState<string | null>(null);
   const [coordSuccess, setCoordSuccess] = useState<string | null>(null);
+
 
   // Form error validation
   const [formError, setFormError] = useState<string | null>(null);
@@ -134,6 +136,33 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     }
   };
 
+  const handleGetDeviceGPS = () => {
+    if (!navigator.geolocation) {
+      setCoordError('Geolocalização GPS não é suportada neste navegador.');
+      return;
+    }
+
+    setIsLocatingGPS(true);
+    setCoordError(null);
+    setCoordSuccess(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocatingGPS(false);
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        setLatitude(lat);
+        setLongitude(lng);
+        setCoordSuccess(`📍 GPS de Alta Precisão capturado! Lat ${lat}, Lng ${lng} (Precisão de ~${Math.round(pos.coords.accuracy || 5)}m)`);
+      },
+      (err) => {
+        setIsLocatingGPS(false);
+        setCoordError('Não foi possível obter a posição GPS do dispositivo. Certifique-se de autorizar a localização.');
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  };
+
   const handleLookupCoordinates = async () => {
     if (!address && !city) {
       setCoordError('Preencha ao menos o endereço ou a cidade para buscar.');
@@ -152,18 +181,22 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       const best = results[0];
       setLatitude(best.latitude.toFixed(6));
       setLongitude(best.longitude.toFixed(6));
-      setCoordSuccess(`Ponto encontrado: ${best.displayName.slice(0, 75)}...`);
+      const badge = best.precisionType === 'exact_street'
+        ? '📍 Precisão Nível de Rua/Número'
+        : '⚠️ Precisão Aproximada (Centro da Cidade) — Ajuste clicando no mapa';
+      setCoordSuccess(`${badge}: ${best.displayName.slice(0, 80)}`);
     } else {
       const cityResults = await searchAddressCoordinates(`${city} - ${state}, Brasil`);
       if (cityResults.length > 0) {
         setLatitude(cityResults[0].latitude.toFixed(6));
         setLongitude(cityResults[0].longitude.toFixed(6));
-        setCoordSuccess(`Coordenadas aproximadas da cidade de ${city}!`);
+        setCoordSuccess(`Coordenadas aproximadas da cidade de ${city}! Use a opção "Marcar com clique no mapa" para ajustar no portão exato.`);
       } else {
-        setCoordError('Não encontramos coordenadas para este endereço. Tente preencher manualmente ou clicar no mapa.');
+        setCoordError('Não encontramos coordenadas para este endereço. Tente usar GPS, preencher manualmente ou clicar no mapa.');
       }
     }
   };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,52 +466,70 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 </div>
               )}
 
-              {/* Coordenadas manuais e botão de apontamento */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-neutral-50 p-3.5 rounded-lg border border-neutral-200">
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                    Latitude *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    placeholder="-23.550520"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white"
-                  />
+              {/* Coordenadas manuais e botões de alta precisão */}
+              <div className="space-y-2 bg-neutral-50 p-3.5 rounded-lg border border-neutral-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                      Latitude (6 casas decimais) *
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      placeholder="-23.550520"
+                      value={latitude}
+                      onChange={(e) => setLatitude(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white focus:ring-1 focus:ring-[#d32f2f]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                      Longitude (6 casas decimais) *
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      placeholder="-46.633308"
+                      value={longitude}
+                      onChange={(e) => setLongitude(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white focus:ring-1 focus:ring-[#d32f2f]"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
-                    Longitude *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    placeholder="-46.633308"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs font-mono rounded border border-neutral-300 bg-white"
-                  />
-                </div>
+                {/* Accuracy Tools */}
+                <div className="pt-2 border-t border-neutral-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleGetDeviceGPS}
+                    disabled={isLocatingGPS}
+                    className="inline-flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer"
+                    title="Obter coordenadas com sub-metro de precisão do GPS do seu dispositivo"
+                  >
+                    {isLocatingGPS ? (
+                      <Loader2 className="w-3.5 h-3.5 text-sky-600 animate-spin" />
+                    ) : (
+                      <LocateFixed className="w-3.5 h-3.5 text-sky-600" />
+                    )}
+                    <span>{isLocatingGPS ? 'Obtendo GPS...' : 'Usar meu GPS Atual (Alta Precisão)'}</span>
+                  </button>
 
-                <div className="sm:col-span-2 flex items-center justify-between text-xs text-neutral-500 pt-1">
-                  <span>Dica: Use "Buscar no Mapa" ou selecione direto:</span>
                   {onStartPickOnMap && (
                     <button
                       type="button"
                       onClick={onStartPickOnMap}
-                      className="text-[#d32f2f] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                      className="text-[#d32f2f] hover:underline font-bold flex items-center gap-1 cursor-pointer ml-auto"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>Marcar com clique no mapa</span>
+                      <span>Marcar com clique no mapa principal</span>
                     </button>
                   )}
                 </div>
               </div>
+
             </div>
 
             {/* Seção 3: Descrição & Manifesto */}

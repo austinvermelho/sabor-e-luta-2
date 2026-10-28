@@ -2,6 +2,7 @@ export interface GeocodeResult {
   latitude: number;
   longitude: number;
   displayName: string;
+  precisionType: 'exact_street' | 'approximate';
 }
 
 export const searchAddressCoordinates = async (query: string): Promise<GeocodeResult[]> => {
@@ -11,10 +12,9 @@ export const searchAddressCoordinates = async (query: string): Promise<GeocodeRe
 
   const cleanQuery = query.trim();
 
-  // Primary Free Provider: Photon by Komoot (OpenStreetMap search server)
+  // Primary Free Provider: Photon by Komoot (OpenStreetMap search server with Brazil bias)
   try {
-    const encoded = encodeURIComponent(cleanQuery);
-    // Lat/Lon center bias near Brazil (-14.2350, -51.9253)
+    const encoded = encodeURIComponent(cleanQuery.includes('Brasil') ? cleanQuery : `${cleanQuery}, Brasil`);
     const url = `https://photon.komoot.io/api/?q=${encoded}&lat=-14.2350&lon=-51.9253&lang=pt&limit=5`;
     const response = await fetch(url);
 
@@ -33,6 +33,8 @@ export const searchAddressCoordinates = async (query: string): Promise<GeocodeRe
             district?: string;
             state?: string;
             country?: string;
+            osm_type?: string;
+            osm_key?: string;
           };
         }) => {
           const [lng, lat] = feature.geometry.coordinates;
@@ -48,10 +50,13 @@ export const searchAddressCoordinates = async (query: string): Promise<GeocodeRe
           if (props.state) parts.push(props.state);
           if (props.country) parts.push(props.country);
 
+          const isStreetLevel = Boolean(props.street || props.housenumber || props.osm_key === 'building' || props.osm_key === 'amenity');
+
           return {
             latitude: lat,
             longitude: lng,
             displayName: parts.length > 0 ? parts.join(', ') : cleanQuery,
+            precisionType: isStreetLevel ? 'exact_street' : 'approximate',
           };
         });
 
@@ -64,7 +69,7 @@ export const searchAddressCoordinates = async (query: string): Promise<GeocodeRe
     console.warn('Erro ao consultar Photon Geocoding API:', err);
   }
 
-  // Secondary Free Provider: OpenStreetMap Nominatim
+  // Secondary Free Provider: OpenStreetMap Nominatim with address details
   try {
     const encoded = encodeURIComponent(cleanQuery.includes('Brasil') ? cleanQuery : `${cleanQuery}, Brasil`);
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&countrycodes=br&limit=5&addressdetails=1`;
@@ -78,11 +83,20 @@ export const searchAddressCoordinates = async (query: string): Promise<GeocodeRe
     if (response.ok) {
       const data = await response.json();
       if (Array.isArray(data) && data.length > 0) {
-        return data.map((item: { lat: string; lon: string; display_name: string }) => ({
-          latitude: parseFloat(item.lat),
-          longitude: parseFloat(item.lon),
-          displayName: item.display_name,
-        }));
+        return data.map((item: { 
+          lat: string; 
+          lon: string; 
+          display_name: string;
+          address?: { road?: string; house_number?: string; suburb?: string };
+        }) => {
+          const isStreet = Boolean(item.address?.road || item.address?.house_number);
+          return {
+            latitude: parseFloat(item.lat),
+            longitude: parseFloat(item.lon),
+            displayName: item.display_name,
+            precisionType: isStreet ? 'exact_street' : 'approximate',
+          };
+        });
       }
     }
   } catch (error) {
@@ -91,4 +105,3 @@ export const searchAddressCoordinates = async (query: string): Promise<GeocodeRe
 
   return [];
 };
-

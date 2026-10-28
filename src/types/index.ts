@@ -70,3 +70,28 @@ export interface ProjectSupportConfig {
   recipientName: string;
   description: string;
 }
+
+export type VolunteerSkill =
+  | 'curadoria'
+  | 'design'
+  | 'dev'
+  | 'agroecologia'
+  | 'comunicacao'
+  | 'mapeamento'
+  | 'eventos'
+  | 'traducao';
+
+export interface Volunteer {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp: string;
+  city: string;
+  state: string;
+  skills: VolunteerSkill[];
+  availability: string;
+  message?: string;
+  status: 'pending' | 'contacted' | 'archived';
+  createdAt: string;
+}
+

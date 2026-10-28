@@ -7,7 +7,9 @@ import {
   Menu, 
   X, 
   Heart,
-  Lock
+  Lock,
+  HandHeart,
+  Users
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -20,6 +22,9 @@ interface HeaderProps {
   onOpenPending?: () => void;
   onLogoutAdmin?: () => void;
   onOpenAdminLogin?: () => void;
+  onOpenVolunteerModal?: () => void;
+  onOpenVolunteerListModal?: () => void;
+  pendingVolunteerCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,6 +37,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPending,
   onLogoutAdmin,
   onOpenAdminLogin,
+  onOpenVolunteerModal,
+  onOpenVolunteerListModal,
+  pendingVolunteerCount = 0,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -56,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
               {onOpenPending && (
                 <button
                   onClick={onOpenPending}
-                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-amber-300 ${
+                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-amber-300 cursor-pointer ${
                     pendingCount > 0
                       ? 'bg-amber-400 text-neutral-950 animate-pulse'
                       : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
@@ -64,7 +72,23 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <Clock className="w-3 h-3" aria-hidden="true" />
                   <span>
-                    {pendingCount > 0 ? `${pendingCount} Pendentes` : 'Moderação (0)'}
+                    {pendingCount > 0 ? `${pendingCount} Espaços Pendentes` : 'Moderação (0)'}
+                  </span>
+                </button>
+              )}
+
+              {onOpenVolunteerListModal && (
+                <button
+                  onClick={onOpenVolunteerListModal}
+                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-rose-300 cursor-pointer ${
+                    pendingVolunteerCount > 0
+                      ? 'bg-[#b91c1c] text-white animate-pulse'
+                      : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                  }`}
+                >
+                  <Users className="w-3 h-3" aria-hidden="true" />
+                  <span>
+                    Voluntários {pendingVolunteerCount > 0 ? `(${pendingVolunteerCount})` : ''}
                   </span>
                 </button>
               )}
@@ -72,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
               {onLogoutAdmin && (
                 <button
                   onClick={onLogoutAdmin}
-                  className="text-neutral-400 hover:text-white underline text-[11px] flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-white rounded"
+                  className="text-neutral-400 hover:text-white underline text-[11px] flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-white rounded cursor-pointer"
                 >
                   <LogOut className="w-3 h-3" aria-hidden="true" />
                   <span className="hidden sm:inline">Sair</span>
@@ -82,6 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       )}
+
 
       {/* Main Header Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -148,13 +173,24 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </nav>
 
-          {/* Right Actions: Register Button + Mobile Menu Toggle */}
+          {/* Right Actions: Volunteer CTA + Register Button + Mobile Menu Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             
+            {/* Volunteer CTA */}
+            {onOpenVolunteerModal && (
+              <button
+                onClick={onOpenVolunteerModal}
+                className="hidden sm:inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-[#b91c1c] border border-rose-200 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer shadow-2xs"
+              >
+                <HandHeart className="w-3.5 h-3.5 text-[#b91c1c]" aria-hidden="true" />
+                <span>Seja Voluntário(a)</span>
+              </button>
+            )}
+
             {/* Direct Cadastrar Espaço Button */}
             <button
               onClick={onOpenRegister}
-              className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs sm:text-sm font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-xs active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-amber-300"
+              className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs sm:text-sm font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-xs active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-amber-300 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" aria-hidden="true" />
               <span className="hidden xs:inline">Cadastrar Espaço</span>
@@ -167,12 +203,13 @@ export const Header: React.FC<HeaderProps> = ({
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-drawer-menu"
               aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
-              className="md:hidden p-2 rounded-lg border border-[#e4dcce] bg-[#f3ede2] hover:bg-[#ebe2d3] text-[#141210] transition-colors focus-visible:ring-2 focus-visible:ring-[#b91c1c]"
+              className="md:hidden p-2 rounded-lg border border-[#e4dcce] bg-[#f3ede2] hover:bg-[#ebe2d3] text-[#141210] transition-colors focus-visible:ring-2 focus-visible:ring-[#b91c1c] cursor-pointer"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-[#b91c1c]" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
             </button>
 
           </div>
+
 
         </div>
 
@@ -231,24 +268,47 @@ export const Header: React.FC<HeaderProps> = ({
         <div id="mobile-drawer-menu" className="md:hidden border-t border-[#e4dcce] bg-[#fbf8f3]/98 backdrop-blur-xl animate-in slide-in-from-top-2 duration-200 shadow-lg">
           <div className="px-4 py-4 space-y-3.5 max-w-7xl mx-auto">
             
-            {/* Primary Action Button */}
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenRegister();
-              }}
-              className="w-full flex items-center justify-between p-3.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white rounded-xl shadow-md transition-all active:scale-[0.99] text-left focus-visible:ring-2 focus-visible:ring-amber-300"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                  <Plus className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
+            {/* Primary Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenRegister();
+                }}
+                className="w-full flex items-center justify-between p-3.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white rounded-xl shadow-md transition-all active:scale-[0.99] text-left focus-visible:ring-2 focus-visible:ring-amber-300 cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                    <Plus className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm leading-tight">Cadastrar Novo Espaço</div>
+                    <div className="text-[11px] text-amber-100 font-normal">Indique um local progressista</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-bold text-sm leading-tight">Cadastrar Novo Espaço</div>
-                  <div className="text-[11px] text-amber-100 font-normal">Indique um restaurante, bar ou café progressista</div>
-                </div>
-              </div>
-            </button>
+              </button>
+
+              {onOpenVolunteerModal && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenVolunteerModal();
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 bg-rose-50 hover:bg-rose-100 text-[#b91c1c] border border-rose-200 rounded-xl transition-all text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-rose-200/60 flex items-center justify-center shrink-0">
+                      <HandHeart className="w-5 h-5 text-[#b91c1c]" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm leading-tight">Seja Voluntário(a)</div>
+                      <div className="text-[11px] text-rose-800 font-normal">Ajude na curadoria ou tecnologia</div>
+                    </div>
+                  </div>
+                </button>
+              )}
+            </div>
+
 
             {/* Supplementary Options & Controls */}
             <div className="space-y-2 pt-1 border-t border-[#e4dcce]">

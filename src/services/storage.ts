@@ -1,10 +1,16 @@
-import { Establishment, AdSenseConfig, ProjectSupportConfig } from '../types';
+import { Establishment, AdSenseConfig, ProjectSupportConfig, Volunteer } from '../types';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 const STORAGE_KEY = 'sabor_luta_estabelecimentos';
 const ADSENSE_KEY = 'sabor_luta_adsense_config';
 const PROJECT_PIX_KEY = 'sabor_luta_project_pix';
+
+// Firestore Collections
+const ESTABLISHMENTS_COL = collection(db, 'establishments');
+const VOLUNTEERS_COL = collection(db, 'volunteers');
+const MOCK_EXAMPLE_IDS = ['ex-armazem-campo-sp', 'ex-al-janiah-sp', 'ex-ordinario-bar'];
+
 
 // ... (Keep existing config helpers using localStorage)
 export const DEFAULT_PROJECT_SUPPORT: ProjectSupportConfig = {
@@ -55,8 +61,6 @@ export const saveProjectSupportConfig = (config: ProjectSupportConfig): void => 
 };
 
 // Firestore Helpers
-const ESTABLISHMENTS_COL = collection(db, 'establishments');
-const MOCK_EXAMPLE_IDS = ['ex-armazem-campo-sp', 'ex-al-janiah-sp', 'ex-ordinario-bar'];
 
 export const sanitizeForFirestore = (obj: any): any => {
   if (obj === null || obj === undefined) return null;
@@ -257,3 +261,136 @@ export const saveAdSenseConfig = (config: AdSenseConfig): void => {
 };
 
 export const SUGGESTED_EXAMPLES: Establishment[] = [];
+
+// ==========================================
+// VOLUNTEERS FIRESTORE & SERVER API SERVICES
+// ==========================================
+
+export const fetchVolunteersAsync = async (): Promise<Volunteer[]> => {
+  const itemsMap = new Map<string, Volunteer>();
+  let firestoreFailed = false;
+
+  try {
+    const snapshot = await getDocs(VOLUNTEERS_COL);
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data() as Volunteer;
+      if (data && data.id) {
+        itemsMap.set(data.id, data);
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao buscar voluntários do Firestore:', err);
+    firestoreFailed = true;
+  }
+
+  // Also query Express server fallback
+  try {
+    const res = await fetch('/api/volunteers');
+    if (res.ok) {
+      const serverItems = await res.json();
+      if (Array.isArray(serverItems)) {
+        for (const vItem of serverItems) {
+          if (vItem && vItem.id) {
+            if (!itemsMap.has(vItem.id)) {
+              itemsMap.set(vItem.id, vItem);
+              if (!firestoreFailed) {
+                setDoc(doc(VOLUNTEERS_COL, vItem.id), sanitizeForFirestore(vItem)).catch(() => {});
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Silent catch
+  }
+
+  return Array.from(itemsMap.values());
+};
+
+export const saveVolunteerAsync = async (volunteer: Volunteer): Promise<Volunteer[]> => {
+  const sanitized = sanitizeForFirestore(volunteer);
+
+  // 1. Firestore write
+  try {
+    await setDoc(doc(VOLUNTEERS_COL, volunteer.id), sanitized);
+  } catch (err) {
+    console.error('Erro ao salvar voluntário no Firestore:', err);
+  }
+
+  // 2. Mirror server endpoint
+  try {
+    await fetch('/api/volunteers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sanitized),
+    });
+  } catch (serverErr) {
+    console.error('Erro ao sincronizar voluntário no servidor Express:', serverErr);
+  }
+
+  return await fetchVolunteersAsync();
+};
+
+export const updateVolunteerStatusAsync = async (
+  id: string,
+  status: Volunteer['status']
+): Promise<Volunteer[]> => {
+  const items = await fetchVolunteersAsync();
+  const target = items.find((v) => v.id === id);
+  if (target) {
+    const updated = { ...target, status };
+    return await saveVolunteerAsync(updated);
+  }
+  return items;
+};
+
+export const deleteVolunteerAsync = async (id: string): Promise<Volunteer[]> => {
+  try {
+    await deleteDoc(doc(VOLUNTEERS_COL, id));
+  } catch (err) {
+    console.error('Erro ao deletar voluntário do Firestore:', err);
+  }
+
+  try {
+    await fetch(`/api/volunteers/${id}`, { method: 'DELETE' });
+  } catch {
+    // Silent catch
+  }
+
+  return await fetchVolunteersAsync();
+};
+
+export const subscribeToVolunteers = (
+  callback: (volunteers: Volunteer[]) => void
+): (() => void) => {
+  fetchVolunteersAsync().then((items) => {
+    if (items) callback(items);
+  });
+
+  try {
+    const unsubscribe = onSnapshot(
+      VOLUNTEERS_COL,
+      (snapshot) => {
+        const itemsMap = new Map<string, Volunteer>();
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data() as Volunteer;
+          if (data && data.id) {
+            itemsMap.set(data.id, data);
+          }
+        }
+        callback(Array.from(itemsMap.values()));
+      },
+      (err) => {
+        console.error('Erro no listener real-time de voluntários:', err);
+        fetchVolunteersAsync().then((items) => {
+          if (items) callback(items);
+        });
+      }
+    );
+    return unsubscribe;
+  } catch {
+    return () => {};
+  }
+};
+

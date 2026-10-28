@@ -14,13 +14,14 @@ interface MapProps {
   pickedCoordinates?: { lat: number; lng: number } | null;
 }
 
-// Custom Leaflet pin icon generator
+// Custom Leaflet pin icon generator with exact tip anchor alignment
 const createCustomPinIcon = (isSelected: boolean) => {
   const color = isSelected ? '#b71c1c' : '#d32f2f';
   const size = isSelected ? 38 : 32;
+  const height = Math.round((size * 46) / 38);
 
   const svg = `
-    <svg width="${size}" height="${size * 1.2}" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${size}" height="${height}" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M19 0C8.5 0 0 8.5 0 19C0 31.5 19 46 19 46C19 46 38 31.5 38 19C38 8.5 29.5 0 19 0Z" fill="${color}" stroke="#FFFFFF" stroke-width="2.5"/>
       <circle cx="19" cy="18" r="7" fill="#FBC02D" />
     </svg>
@@ -29,11 +30,12 @@ const createCustomPinIcon = (isSelected: boolean) => {
   return L.divIcon({
     html: svg,
     className: 'custom-marker-icon',
-    iconSize: [size, size * 1.2],
-    iconAnchor: [size / 2, size * 1.2],
-    popupAnchor: [0, -size * 1.1],
+    iconSize: [size, height],
+    iconAnchor: [size / 2, height],
+    popupAnchor: [0, -height + 4],
   });
 };
+
 
 // Picked coordinates pin icon
 const createPickedPinIcon = () => {
@@ -230,8 +232,9 @@ export const Map: React.FC<MapProps> = ({
 
       if (isSelected) {
         marker.openPopup();
-        map.panTo([item.latitude, item.longitude]);
+        map.setView([item.latitude, item.longitude], Math.max(map.getZoom(), 16), { animate: true });
       }
+
     });
   }, [establishments, selectedId, onSelectEstablishment, onOpenDetails]);
 

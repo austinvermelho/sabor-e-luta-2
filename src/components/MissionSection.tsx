@@ -23,13 +23,16 @@ interface MissionSectionProps {
   onOpenRegister: () => void;
   onExploreMap: () => void;
   establishments: Establishment[];
+  onOpenVolunteerModal?: () => void;
 }
 
 export const MissionSection: React.FC<MissionSectionProps> = ({
   onOpenRegister,
   onExploreMap,
   establishments = [],
+  onOpenVolunteerModal,
 }) => {
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       
@@ -268,21 +271,31 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
           <button
             onClick={onExploreMap}
-            className="inline-flex items-center gap-1.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200 text-xs font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200 text-xs font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-2xs cursor-pointer"
           >
             <MapPin className="w-3.5 h-3.5 text-[#b91c1c]" />
             <span>Ver no Mapa</span>
           </button>
 
+          {onOpenVolunteerModal && (
+            <button
+              onClick={onOpenVolunteerModal}
+              className="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-[#b91c1c] border border-rose-200 text-xs font-bold px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-2xs"
+            >
+              <HeartHandshake className="w-4 h-4 text-[#b91c1c]" />
+              <span>Seja Voluntário(a)</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenRegister}
-            className="inline-flex items-center gap-1.5 bg-[#b91c1c] hover:bg-[#b71c1c] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-all shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Cadastrar Espaço</span>
           </button>
         </div>
+
       </div>
 
     </div>

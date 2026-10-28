@@ -118,6 +118,87 @@ app.delete('/api/establishments/:id', (req, res) => {
   res.json({ success: true, items: filtered });
 });
 
+// Volunteers Persistence and API Routes
+const VOLUNTEERS_FILE = path.join(__dirname, 'data', 'volunteers.json');
+
+function readVolunteersData(): any[] {
+  try {
+    if (!fs.existsSync(VOLUNTEERS_FILE)) {
+      writeVolunteersData([]);
+      return [];
+    }
+    const raw = fs.readFileSync(VOLUNTEERS_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Error reading volunteers data file:', error);
+    return [];
+  }
+}
+
+function writeVolunteersData(data: any[]): void {
+  try {
+    const dir = path.dirname(VOLUNTEERS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(VOLUNTEERS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Error writing volunteers data file:', error);
+  }
+}
+
+app.get('/api/volunteers', (req, res) => {
+  const items = readVolunteersData();
+  res.json(items);
+});
+
+app.post('/api/volunteers', (req, res) => {
+  const newItem = req.body;
+  if (!newItem || !newItem.id || !newItem.name || !newItem.email) {
+    return res.status(400).json({ error: 'Cadastro de voluntário inválido.' });
+  }
+
+  const current = readVolunteersData();
+  const existingIndex = current.findIndex((v) => v.id === newItem.id);
+
+  if (existingIndex >= 0) {
+    current[existingIndex] = newItem;
+  } else {
+    current.unshift(newItem);
+  }
+
+  writeVolunteersData(current);
+  res.json({ success: true, items: current });
+});
+
+app.put('/api/volunteers/:id', (req, res) => {
+  const { id } = req.params;
+  const updatedData = req.body;
+
+  const current = readVolunteersData();
+  const index = current.findIndex((v) => v.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Voluntário não encontrado.' });
+  }
+
+  current[index] = { ...current[index], ...updatedData };
+  writeVolunteersData(current);
+
+  res.json({ success: true, item: current[index], items: current });
+});
+
+app.delete('/api/volunteers/:id', (req, res) => {
+  const { id } = req.params;
+  const current = readVolunteersData();
+  const filtered = current.filter((v) => v.id !== id);
+
+  writeVolunteersData(filtered);
+  res.json({ success: true, items: filtered });
+});
+
+
 // Mount Vite in development
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
