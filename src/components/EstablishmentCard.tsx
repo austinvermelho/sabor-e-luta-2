@@ -1,13 +1,15 @@
 import React from 'react';
-import { MapPin, ArrowUpRight, Compass } from 'lucide-react';
+import { MapPin, ArrowUpRight, Compass, Navigation } from 'lucide-react';
 import { Establishment } from '../types';
 import { CATEGORIES } from '../utils/categories';
+import { calculateDistanceKm, formatDistancePT } from '../utils/geo';
 
 interface EstablishmentCardProps {
   establishment: Establishment;
   isSelected: boolean;
   onSelect: (id: string) => void;
   onOpenDetails: (item: Establishment) => void;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
@@ -15,6 +17,7 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   isSelected,
   onSelect,
   onOpenDetails,
+  userLocation,
 }) => {
   const categoryInfo = CATEGORIES[establishment.category] || {
     label: 'Espaço Progressista',
@@ -24,6 +27,10 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
 
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${establishment.address}, ${establishment.city} - ${establishment.state}, Brasil`)}`;
 
+  const distanceKm = userLocation
+    ? calculateDistanceKm(userLocation.lat, userLocation.lng, establishment.latitude, establishment.longitude)
+    : null;
+  const distanceStr = distanceKm !== null && distanceKm !== Infinity ? formatDistancePT(distanceKm) : null;
 
   return (
     <div
@@ -42,8 +49,17 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
               <span>{categoryInfo.icon}</span>
               <span>{categoryInfo.shortLabel}</span>
             </span>
+
+            {/* Distance Badge if user location is active */}
+            {distanceStr && (
+              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-semibold" title="Distância estimada até a sua localização">
+                <Navigation className="w-3 h-3 text-emerald-600 shrink-0 fill-emerald-600/20" />
+                <span>a {distanceStr} de você</span>
+              </span>
+            )}
+
             <span aria-hidden="true" className="text-[#e4dcce]">·</span>
-            <span className="flex items-center gap-0.5 text-neutral-700 truncate max-w-[200px]" title={establishment.address}>
+            <span className="flex items-center gap-0.5 text-neutral-700 truncate max-w-[180px]" title={establishment.address}>
               <MapPin className="w-3 h-3 text-[#b91c1c] shrink-0" />
               <span className="truncate">{establishment.address}</span>
             </span>
@@ -54,7 +70,7 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-[11px] text-[#b91c1c] hover:text-[#991b1b] flex items-center gap-1 hover:underline font-semibold"
+            className="text-[11px] text-[#b91c1c] hover:text-[#991b1b] flex items-center gap-1 hover:underline font-semibold shrink-0"
             title="Abrir rota no Google Maps"
           >
             <Compass className="w-3 h-3 text-[#b91c1c]" />

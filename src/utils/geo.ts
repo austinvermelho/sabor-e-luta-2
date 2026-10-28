@@ -1,0 +1,36 @@
+/**
+ * Calculates the great-circle distance between two geographic coordinates in kilometers
+ * using the Haversine formula.
+ */
+export function calculateDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) return Infinity;
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in kilometers
+}
+
+/**
+ * Formats distance into a human-readable Brazilian Portuguese string
+ * e.g., "350 m" or "2,4 km"
+ */
+export function formatDistancePT(km: number): string {
+  if (km === Infinity || isNaN(km)) return '';
+  if (km < 1) {
+    const meters = Math.round(km * 1000);
+    return `${meters} m`;
+  }
+  return `${km.toFixed(1).replace('.', ',')} km`;
+}

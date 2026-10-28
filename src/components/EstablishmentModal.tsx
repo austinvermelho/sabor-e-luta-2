@@ -22,6 +22,8 @@ import { CATEGORIES } from '../utils/categories';
 import { formatOperatingHoursPT, getOpeningStatusPT, formatDatePT } from '../utils/hours';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
+import { calculateDistanceKm, formatDistancePT } from '../utils/geo';
+
 interface EstablishmentModalProps {
   establishment: Establishment | null;
   onClose: () => void;
@@ -29,6 +31,7 @@ interface EstablishmentModalProps {
   onEdit: (item: Establishment) => void;
   onDelete: (id: string) => void;
   isAdmin?: boolean;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
@@ -38,6 +41,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
   onEdit,
   onDelete,
   isAdmin = false,
+  userLocation,
 }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -64,6 +68,11 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
   const mapRouteUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddressQuery)}`;
 
   const formattedHours = formatOperatingHoursPT(establishment.operatingHours);
+
+  const modalDistanceKm = userLocation
+    ? calculateDistanceKm(userLocation.lat, userLocation.lng, establishment.latitude, establishment.longitude)
+    : null;
+  const modalDistanceStr = modalDistanceKm !== null && modalDistanceKm !== Infinity ? formatDistancePT(modalDistanceKm) : null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -101,6 +110,14 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
               </span>
               <span aria-hidden="true" className="text-neutral-300">·</span>
               <span>{establishment.city} - {establishment.state}</span>
+
+              {/* Distance Badge */}
+              {modalDistanceStr && (
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                  <Navigation2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span>a {modalDistanceStr} de você</span>
+                </span>
+              )}
 
               {/* Status Badge */}
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${openStatus.badgeColor}`}>

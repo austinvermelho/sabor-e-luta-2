@@ -9,8 +9,12 @@ import {
   Lock,
   Clock,
   Quote,
-  ArrowRight
+  ArrowRight,
+  LocateFixed,
+  Loader2,
+  Navigation
 } from 'lucide-react';
+import { calculateDistanceKm } from './utils/geo';
 import { Establishment, AdSenseConfig, ProjectSupportConfig, Volunteer } from './types';
 import { 
   getEstablishments, 
@@ -79,10 +83,38 @@ export default function App() {
   // Navigation & View tabs: 'all' (visão geral), 'map' (mapa), 'catalog' (catálogo), 'mission' (missão & valores)
   const [activeTab, setActiveTab] = useState<'all' | 'map' | 'catalog' | 'mission'>('all');
   
-  // Filters
+  // Filters & Sorting
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedState, setSelectedState] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'default' | 'distance' | 'name'>('default');
+
+  // User Geolocation GPS
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocatingUser, setIsLocatingUser] = useState(false);
+
+  const handleGetUserLocation = () => {
+    if (!navigator.geolocation) {
+      showToast('Seu navegador não suporta geolocalização.');
+      return;
+    }
+    setIsLocatingUser(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocatingUser(false);
+        const userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(userLoc);
+        setSortBy('distance');
+        showToast('Localização obtida! Ordenando por proximidade.');
+      },
+      (err) => {
+        setIsLocatingUser(false);
+        showToast('Não foi possível obter sua localização. Verifique a permissão do GPS.');
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  };
 
   // Map interactive coordinate picking mode
   const [isPickingCoord, setIsPickingCoord] = useState(false);
@@ -201,29 +233,41 @@ export default function App() {
   const pendingEstablishments = establishments.filter((e) => e.status === 'pending');
 
   // Public Catalog & Map strictly list approved items only
-  const filteredEstablishments = approvedEstablishments.filter((item) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchesName = item.name.toLowerCase().includes(q);
-      const matchesCity = item.city.toLowerCase().includes(q);
-      const matchesAddress = item.address.toLowerCase().includes(q);
-      const matchesDesc = item.description.toLowerCase().includes(q);
-      const matchesTags = item.tags?.some((t) => t.toLowerCase().includes(q));
-      if (!matchesName && !matchesCity && !matchesAddress && !matchesDesc && !matchesTags) {
+  const filteredEstablishments = approvedEstablishments
+    .filter((item) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName = item.name.toLowerCase().includes(q);
+        const matchesCity = item.city.toLowerCase().includes(q);
+        const matchesAddress = item.address.toLowerCase().includes(q);
+        const matchesDesc = item.description.toLowerCase().includes(q);
+        const matchesTags = item.tags?.some((t) => t.toLowerCase().includes(q));
+        if (!matchesName && !matchesCity && !matchesAddress && !matchesDesc && !matchesTags) {
+          return false;
+        }
+      }
+
+      if (selectedCategory !== 'all' && item.category !== selectedCategory) {
         return false;
       }
-    }
 
-    if (selectedCategory !== 'all' && item.category !== selectedCategory) {
-      return false;
-    }
+      if (selectedState !== 'all' && item.state !== selectedState) {
+        return false;
+      }
 
-    if (selectedState !== 'all' && item.state !== selectedState) {
-      return false;
-    }
-
-    return true;
-  });
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'distance' && userLocation) {
+        const distA = calculateDistanceKm(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+        const distB = calculateDistanceKm(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+        return distA - distB;
+      }
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name, 'pt-BR');
+      }
+      return 0;
+    });
 
   const availableStates = Array.from(new Set(approvedEstablishments.map((e) => e.state))).sort();
 
@@ -535,10 +579,52 @@ export default function App() {
                     </>
                   )}
 
+                  {/* GPS Proximity Button */}
+                  <button
+                    onClick={handleGetUserLocation}
+                    disabled={isLocatingUser}
+                    title="Ativar meu GPS para calcular distâncias e ordenar por proximidade"
+                    className={`px-3 py-2 text-xs rounded-lg font-semibold border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      userLocation
+                        ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
+                        : 'bg-[#f3ede2] text-[#141210] border-[#e4dcce] hover:bg-[#e8decb]'
+                    }`}
+                  >
+                    {isLocatingUser ? (
+                      <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                    ) : (
+                      <LocateFixed className={`w-3.5 h-3.5 ${userLocation ? 'text-emerald-600' : 'text-[#b91c1c]'}`} />
+                    )}
+                    <span>{userLocation ? 'GPS Ativo' : 'Meu GPS'}</span>
+                  </button>
+
+                  {/* Sort Select */}
+                  <label htmlFor="sort-select" className="sr-only">Ordenar estabelecimentos</label>
+                  <select
+                    id="sort-select"
+                    value={sortBy}
+                    onChange={(e) => {
+                      const newSort = e.target.value as 'default' | 'distance' | 'name';
+                      if (newSort === 'distance' && !userLocation) {
+                        handleGetUserLocation();
+                      } else {
+                        setSortBy(newSort);
+                      }
+                    }}
+                    className="px-3 py-2 text-xs rounded-lg border border-[#e4dcce] bg-white font-medium text-[#141210] focus:outline-none focus:ring-2 focus:ring-[#b91c1c]"
+                  >
+                    <option value="default">Ordem Padrão</option>
+                    <option value="distance">📍 Mais Próximos (GPS)</option>
+                    <option value="name">🔤 Ordem Alfabética (A-Z)</option>
+                  </select>
+
                   {/* Reset filter if active */}
-                  {(searchQuery || selectedCategory !== 'all' || selectedState !== 'all') && (
+                  {(searchQuery || selectedCategory !== 'all' || selectedState !== 'all' || sortBy !== 'default') && (
                     <button
-                      onClick={resetFilters}
+                      onClick={() => {
+                        resetFilters();
+                        setSortBy('default');
+                      }}
                       aria-label="Limpar todos os filtros de busca"
                       title="Limpar filtros"
                       className="p-2 text-[#b91c1c] hover:text-[#991b1b] rounded-lg hover:bg-[#f3ede2] transition-colors focus-visible:ring-2 focus-visible:ring-[#b91c1c]"
@@ -604,6 +690,7 @@ export default function App() {
                           isSelected={item.id === selectedId}
                           onSelect={(id) => setSelectedId(id)}
                           onOpenDetails={(item) => setActiveModalItem(item)}
+                          userLocation={userLocation}
                         />
                       ))}
                     </div>
@@ -693,6 +780,7 @@ export default function App() {
                           isSelected={item.id === selectedId}
                           onSelect={(id) => setSelectedId(id)}
                           onOpenDetails={(item) => setActiveModalItem(item)}
+                          userLocation={userLocation}
                         />
                       ))}
                     </div>
@@ -795,6 +883,7 @@ export default function App() {
         }}
         onDelete={handleDeleteEstablishment}
         isAdmin={isAdmin}
+        userLocation={userLocation}
       />
 
       {/* The Beloved Spacious Registration Form Modal */}
