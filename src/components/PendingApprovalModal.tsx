@@ -112,16 +112,16 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
                             <span>{categoryInfo.label}</span>
                           </span>
                           <span aria-hidden="true" className="text-stone-300">·</span>
-                          <span className="flex items-center gap-0.5">
-                            <MapPin className="w-3 h-3 text-[#b91c1c]" />
-                            {item.city} - {item.state}
+                          <span className="flex items-center gap-0.5 font-medium text-stone-700">
+                            <MapPin className="w-3 h-3 text-[#b91c1c] shrink-0" />
+                            <span>{item.address}</span>
                           </span>
                         </div>
                         <h4 className="font-display text-xl font-bold text-[#141210]">
                           {item.name}
                         </h4>
                         <span className="text-xs text-stone-600 block mt-0.5">
-                          {item.address}
+                          {item.city} - {item.state}
                         </span>
                       </div>
 

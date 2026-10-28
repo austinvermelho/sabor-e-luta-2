@@ -43,9 +43,9 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
               <span>{categoryInfo.shortLabel}</span>
             </span>
             <span aria-hidden="true" className="text-[#e4dcce]">·</span>
-            <span className="flex items-center gap-0.5 text-neutral-700">
-              <MapPin className="w-3 h-3 text-[#b91c1c]" />
-              {establishment.city} - {establishment.state}
+            <span className="flex items-center gap-0.5 text-neutral-700 truncate max-w-[200px]" title={establishment.address}>
+              <MapPin className="w-3 h-3 text-[#b91c1c] shrink-0" />
+              <span className="truncate">{establishment.address}</span>
             </span>
           </div>
 
@@ -88,18 +88,12 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
             )}
           </div>
         )}
-
-        {/* Observação / Informação ao público sobre horários */}
-        <div className="mb-3 p-2 bg-[#fef3c7]/70 border border-[#fde68a] rounded-lg text-[10.5px] text-[#78350f] italic leading-tight flex items-start gap-1.5">
-          <span className="font-bold shrink-0">*</span>
-          <span>Recomendamos sempre confirmar horários diretamente com o estabelecimento antes de visitar, pois podem sofrer alterações sem aviso prévio.</span>
-        </div>
       </div>
 
       {/* Footer */}
       <div className="pt-2.5 border-t border-[#e4dcce] flex items-center justify-between gap-3 text-xs">
         <span className="text-neutral-500 text-[11px] truncate max-w-[200px]">
-          {establishment.address}
+          {establishment.city} - {establishment.state}
         </span>
         <button
           onClick={(e) => {

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Establishment, OperatingHours } from '../types';
 import { CATEGORIES } from '../utils/categories';
+import { formatOperatingHoursPT, getOpeningStatusPT } from '../utils/hours';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface EstablishmentModalProps {
@@ -54,19 +55,13 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
     description: 'Espaço comunitário e comprometido socialmente.',
   };
 
-  const getOpenStatus = (hours?: OperatingHours) => {
-    if (!hours) return { isOpen: true, label: 'Horário sob consulta', badgeColor: 'bg-neutral-100 text-neutral-700 border-neutral-200' };
-    
-    return { isOpen: true, label: 'Horário cadastrado', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
-  };
-
-  const openStatus = getOpenStatus(establishment.operatingHours);
+  const openStatus = getOpeningStatusPT(establishment.operatingHours);
 
   const fullAddressQuery = `${establishment.address}, ${establishment.city} - ${establishment.state}, Brasil`;
   const mapExternalUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddressQuery)}`;
   const mapRouteUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddressQuery)}`;
 
-
+  const formattedHours = formatOperatingHoursPT(establishment.operatingHours);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -112,12 +107,10 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
               </span>
             </div>
 
-            {establishment.operatingHours && (
-              <div className="mt-2.5 flex items-center gap-2 text-xs text-neutral-800 bg-[#f3ede2] px-3 py-2 rounded-lg border border-[#e4dcce]">
-                <Clock className="w-4 h-4 text-[#b91c1c] shrink-0" />
-                <span><strong>Horário:</strong> {Object.entries(establishment.operatingHours).filter(([_, h]) => h.isOpen).map(([d, h]) => `${d.charAt(0).toUpperCase() + d.slice(1)}: ${h.open}-${h.close}`).join(', ')}</span>
-              </div>
-            )}
+            <div className="mt-2.5 flex items-center gap-2 text-xs text-neutral-800 bg-[#f3ede2] px-3 py-2 rounded-lg border border-[#e4dcce]">
+              <Clock className="w-4 h-4 text-[#b91c1c] shrink-0" />
+              <span><strong>Horário:</strong> {formattedHours}</span>
+            </div>
 
             {/* Observação / Informação para o público */}
             <div className="mt-2 p-2.5 bg-[#fef3c7]/70 border border-[#fde68a] rounded-lg text-[11px] text-[#78350f] italic leading-relaxed flex items-start gap-1.5">
