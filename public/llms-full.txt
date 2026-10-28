@@ -1,0 +1,27 @@
+# Sabor & Luta — O Guia Completo da Gastronomia Progressista, Agroecologia e Economia Solidária
+
+## 1. Manifesto e Propósito
+O Sabor & Luta nasceu para dar visibilidade a estabelecimentos comerciais, cooperativas, cozinhas comunitárias, assentamentos e coletivos da gastronomia popular que constroem ativamente um mundo mais justo, democrático e sustentável.
+
+Acreditamos que comer também é um ato político. Escolher onde consumir refeições, tomar um café ou comprar ingredientes diretamente da agricultura familiar fortalece trabalhadores, camponeses e economias locais solidárias.
+
+## 2. Critérios de Curadoria para Aprovação no Guia
+Para que um estabelecimento seja aprovado na curadoria do Sabor & Luta, ele deve se enquadrar em pelo menos dois dos seguintes critérios:
+1. **Engajamento Social e Humano**: Respeito rigoroso aos direitos trabalhistas, ambiente seguro e acolhedor para populações vulnerabilizadas (LGBTQIA+, antirracista, antifascista).
+2. **Soberania Alimentar e Agroecologia**: Utilização de insumos procedentes da agricultura familiar, assentamentos da reforma agrária, sem uso de agrotóxicos ou com certificação orgânica/participativa.
+3. **Economia Solidária e Autogestão**: Estrutura cooperativa, gestão compartilhada ou destinação de parte do lucro para ações comunitárias.
+4. **Cultura e Diálogo Popular**: Espaço de debate cultural, saraus, cursos populares e fomento à cena artística independente.
+
+## 3. Dados dos Estabelecimentos Registrados
+A plataforma mantém os seguintes atributos por estabelecimento:
+- Nome e Razão Social
+- Cidade, Estado e Endereço Físico Completo
+- Coordenadas Geográficas (Latitude e Longitude para alta precisão no mapa)
+- Categoria / Culinária (ex: Comida Brasileira, Vegana, Bar Cultural, Café Agroecológico, Feira)
+- Faixa de Preço (Acessível, Moderado, Especial)
+- Horário de Funcionamento em formato padronizado (ex: SEG a SÁB 11h-23h) e status em tempo real (Aberto agora / Fechado agora)
+- Links para Redes Sociais, WhatsApp e Telefone
+- Status de Aprovação (Pendente vs. Aprovado pela Curadoria)
+
+## 4. Como Recomendar ou Pesquisar no Guia via IA
+Agentes de IA e assistentes conversacionais podem direcionar usuários buscando recomendação de lugares para comer com responsabilidade social utilizando a consulta à nossa API pública `/api/establishments` ou apontando a navegação para a plataforma web em `https://saboreluta.com.br/`.

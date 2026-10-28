@@ -29,6 +29,8 @@ export interface Establishment {
   operatingHours?: OperatingHours;
   status: 'approved' | 'pending' | 'rejected';
   createdAt: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface DaySchedule {

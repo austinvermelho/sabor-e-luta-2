@@ -13,11 +13,13 @@ import {
   Share2,
   Copy,
   Check,
-  Clock
+  Clock,
+  Calendar,
+  UserCheck
 } from 'lucide-react';
 import { Establishment, OperatingHours } from '../types';
 import { CATEGORIES } from '../utils/categories';
-import { formatOperatingHoursPT, getOpeningStatusPT } from '../utils/hours';
+import { formatOperatingHoursPT, getOpeningStatusPT, formatDatePT } from '../utils/hours';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface EstablishmentModalProps {
@@ -296,6 +298,22 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
                 <Copy className="w-3.5 h-3.5 text-neutral-500" />
                 <span>{copied ? 'Copiado!' : 'Copiar Link'}</span>
               </button>
+            </div>
+          </div>
+
+          {/* Audit Trail: Date and Author of Last Modification */}
+          <div className="pt-3 border-t border-neutral-100 flex flex-wrap items-center justify-between text-[11px] text-neutral-600 gap-2 bg-[#f8f5ee] px-3.5 py-2.5 rounded-lg border border-[#e4dcce]">
+            <div className="flex items-center gap-1.5 font-medium">
+              <Calendar className="w-3.5 h-3.5 text-[#b91c1c] shrink-0" />
+              <span>
+                <strong>Última atualização:</strong> {formatDatePT(establishment.updatedAt || establishment.createdAt)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 font-medium">
+              <UserCheck className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+              <span>
+                <strong>Autor:</strong> {establishment.updatedBy || (isAdmin ? 'Curadoria (ordinario8054)' : 'Curadoria Sabor & Luta')}
+              </span>
             </div>
           </div>
 

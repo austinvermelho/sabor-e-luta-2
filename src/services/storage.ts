@@ -170,11 +170,16 @@ export const saveEstablishmentAsync = async (item: Establishment, _isEdit: boole
   return await syncEstablishmentToAPI(item);
 };
 
-export const approveEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+export const approveEstablishmentAsync = async (id: string, updatedBy = 'Curadoria (ordinario8054)'): Promise<Establishment[]> => {
   const items = await fetchEstablishmentsAsync();
   const target = items.find((i) => i.id === id);
   if (target) {
-    return await syncEstablishmentToAPI({ ...target, status: 'approved' });
+    return await syncEstablishmentToAPI({
+      ...target,
+      status: 'approved',
+      updatedAt: new Date().toISOString(),
+      updatedBy,
+    });
   }
   return items;
 };

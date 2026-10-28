@@ -161,3 +161,23 @@ export function getOpeningStatusPT(hours?: OperatingHours) {
     badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
   };
 }
+
+/**
+ * Formats ISO date string to Brazilian PT-BR date and time (e.g., "28/10/2026 às 10:55")
+ */
+export function formatDatePT(dateStr?: string): string {
+  if (!dateStr) return 'Data não informada';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} às ${hours}:${mins}`;
+  } catch {
+    return dateStr;
+  }
+}
+

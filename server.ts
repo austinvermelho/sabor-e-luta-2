@@ -13,6 +13,7 @@ const DATA_FILE = path.join(__dirname, 'data', 'establishments.json');
 const BUILD_TIME = Date.now();
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Set Cache-Control headers to ensure HTML entry point and all API routes are never cached
 app.use((req, res, next) => {
@@ -53,6 +54,62 @@ function writeEstablishmentsData(data: any[]): void {
     console.error('Error writing establishments data file:', error);
   }
 }
+
+// SEO & AI Crawlers Routes
+app.get('/robots.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(`User-agent: *
+Allow: /
+
+# AI Agent Crawlers & Search Engines Allowed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://saboreluta.com.br/sitemap.xml
+LLM-Info: https://saboreluta.com.br/llms.txt
+`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const items = readEstablishmentsData().filter((item: any) => item.status === 'approved' || !item.status);
+  const baseUrl = 'https://saboreluta.com.br';
+  const currentDate = new Date().toISOString().split('T')[0];
+
+  const urls = [
+    `  <url>\n    <loc>${baseUrl}/</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`,
+    `  <url>\n    <loc>${baseUrl}/llms.txt</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`,
+    `  <url>\n    <loc>${baseUrl}/llms-full.txt</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`
+  ];
+
+  items.forEach((item: any) => {
+    if (item.id) {
+      urls.push(`  <url>\n    <loc>${baseUrl}/#establishment-${item.id}</loc>\n    <lastmod>${currentDate}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>`);
+    }
+  });
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>`;
+
+  res.setHeader('Content-Type', 'application/xml');
+  res.send(xml);
+});
 
 // API Routes
 app.get('/api/version', (req, res) => {

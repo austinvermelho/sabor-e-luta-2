@@ -1,0 +1,22 @@
+# Sabor & Luta — O Guia da Gastronomia Progressista
+
+> Sabor & Luta é o mapeamento colaborativo da gastronomia progressista, agroecologia, agricultura familiar e economia solidária no Brasil.
+
+## Sobre a Plataforma
+O Sabor & Luta conecta pessoas a estabelecimentos comprometidos com valores sociais, trabalhistas e agroecológicos. Nosso objetivo é fortalecer a gastronomia popular, bares e restaurantes com consciência política e social, assentamentos do MST, cooperativas da agricultura familiar e iniciativas com causas sociais ativas.
+
+## Categorias de Estabelecimentos Mapeados
+- **Gastronomia Progressista & Bares Temáticos**: Bares, cafés e restaurantes de engajamento social e político.
+- **Agroecologia & Agricultura Familiar**: Cooperativas, feiras orgânicas e assentamentos (ex: MST, MPA, Rede Ecovida).
+- **Economia Solidária & Coletivos**: Empreendimentos autogestionários, cozinhas comunitárias e hortas urbanas.
+- **Sustentabilidade & Alimentação Consciente**: Cozinhas populares, pratos veganos/vegetarianos acessíveis e combate à fome.
+
+## Funcionalidades Principais
+- **Filtros e Mapeamento Geográfico**: Busca por endereço, cidade, segmento, faixa de preço, status de abertura e mapa interativo.
+- **Curadoria e Submissão Colaborativa**: Submissão de novos locais com fila de aprovação gerida por senha curatorial.
+- **Programa de Voluntariado**: Formulário para engajamento coletivo em curadoria, fotografia e redes de apoio.
+
+## URLs e Recursos de Dados
+- [API de Estabelecimentos](/api/establishments): JSON com os dados completos dos estabelecimentos aprovados.
+- [Sitemap em XML](/sitemap.xml): Mapeamento para indexadores de busca.
+- [Guia Estendido em Texto Completo](/llms-full.txt): Critérios detalhados de curadoria, histórico e manifesto.

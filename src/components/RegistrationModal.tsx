@@ -231,6 +231,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       return;
     }
 
+    const nowIso = new Date().toISOString();
+    const currentAuthor = isAdmin ? 'Curadoria (ordinario8054)' : 'Colaborador (Comunidade)';
+
     const payload: Establishment = {
       id: initialData?.id || `est-${Date.now()}`,
       name: name.trim(),
@@ -244,7 +247,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       description: description.trim(),
       operatingHours,
       status: initialData ? initialData.status : (isAdmin ? 'approved' : 'pending'),
-      createdAt: initialData?.createdAt || new Date().toISOString(),
+      createdAt: initialData?.createdAt || nowIso,
+      updatedAt: nowIso,
+      updatedBy: currentAuthor,
       ...(history.trim() ? { history: history.trim() } : {}),
       ...(instagram.trim() ? { instagram: instagram.trim() } : {}),
       ...(whatsapp.trim() ? { whatsapp: whatsapp.trim() } : {}),
