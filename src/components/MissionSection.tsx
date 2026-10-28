@@ -58,7 +58,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
       {/* Frase Destaque / Manifesto Curto */}
       <div className="relative bg-white/95 rounded-2xl border border-rose-200/80 p-6 sm:p-8 shadow-2xs">
         <div className="flex flex-col sm:flex-row items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-100/80 text-[#d32f2f] flex items-center justify-center shrink-0 border border-rose-200/70">
+          <div className="w-12 h-12 rounded-xl bg-rose-100/80 text-[#b91c1c] flex items-center justify-center shrink-0 border border-rose-200/70">
             <Quote className="w-6 h-6 stroke-[2.2]" />
           </div>
 
@@ -89,7 +89,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Stat 1 */}
             <div className="bg-white/95 rounded-2xl border border-rose-200/80 p-6 text-center space-y-2 shadow-2xs">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#d32f2f] mx-auto flex items-center justify-center border border-rose-200/60">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#b91c1c] mx-auto flex items-center justify-center border border-rose-200/60">
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="font-display text-3xl font-black text-neutral-900 tracking-tight">
@@ -102,7 +102,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
 
             {/* Stat 2 */}
             <div className="bg-white/95 rounded-2xl border border-rose-200/80 p-6 text-center space-y-2 shadow-2xs">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#d32f2f] mx-auto flex items-center justify-center border border-rose-200/60">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#b91c1c] mx-auto flex items-center justify-center border border-rose-200/60">
                 <Globe2 className="w-5 h-5" />
               </div>
               <div className="font-display text-3xl font-black text-neutral-900 tracking-tight">
@@ -115,7 +115,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
 
             {/* Stat 3 */}
             <div className="bg-white/95 rounded-2xl border border-rose-200/80 p-6 text-center space-y-2 shadow-2xs">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#d32f2f] mx-auto flex items-center justify-center border border-rose-200/60">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#b91c1c] mx-auto flex items-center justify-center border border-rose-200/60">
                 <HandCoins className="w-5 h-5" />
               </div>
               <div className="font-display text-3xl font-black text-neutral-900 tracking-tight">
@@ -136,7 +136,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
         <div className="bg-white/95 rounded-2xl border border-rose-200/70 p-6 sm:p-7 shadow-2xs flex flex-col justify-between space-y-4 hover:border-rose-300 transition-colors">
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#d32f2f] flex items-center justify-center border border-rose-200/60 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#b91c1c] flex items-center justify-center border border-rose-200/60 shrink-0">
                 <Target className="w-5 h-5 stroke-[2.2]" />
               </div>
               <h3 className="font-display text-xl font-bold text-neutral-900">
@@ -158,7 +158,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
         <div className="bg-white/95 rounded-2xl border border-rose-200/70 p-6 sm:p-7 shadow-2xs flex flex-col justify-between space-y-4 hover:border-rose-300 transition-colors">
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#d32f2f] flex items-center justify-center border border-rose-200/60 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#b91c1c] flex items-center justify-center border border-rose-200/60 shrink-0">
                 <Eye className="w-5 h-5 stroke-[2.2]" />
               </div>
               <h3 className="font-display text-xl font-bold text-neutral-900">
@@ -181,7 +181,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
       {/* 🔥 Nossos Valores */}
       <div className="bg-white/95 rounded-2xl border border-rose-200/70 p-6 sm:p-8 shadow-2xs space-y-6">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-rose-100/70 text-[#d32f2f] flex items-center justify-center border border-rose-200/70 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-rose-100/70 text-[#b91c1c] flex items-center justify-center border border-rose-200/70 shrink-0">
             <Flame className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
@@ -198,7 +198,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
           
           {/* Valor 1 */}
           <div className="bg-rose-50/30 rounded-xl border border-rose-100/90 p-4.5 space-y-2 hover:bg-rose-50/60 transition-colors">
-            <div className="flex items-center gap-2 text-[#d32f2f]">
+            <div className="flex items-center gap-2 text-[#b91c1c]">
               <Users className="w-4 h-4" />
               <span className="text-xs font-bold text-rose-900">1. Coletividade e Economia Solidária</span>
             </div>
@@ -209,7 +209,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
 
           {/* Valor 2 */}
           <div className="bg-rose-50/30 rounded-xl border border-rose-100/90 p-4.5 space-y-2 hover:bg-rose-50/60 transition-colors">
-            <div className="flex items-center gap-2 text-[#d32f2f]">
+            <div className="flex items-center gap-2 text-[#b91c1c]">
               <HeartHandshake className="w-4 h-4" />
               <span className="text-xs font-bold text-rose-900">2. Diversidade e Acolhimento Incondicional</span>
             </div>
@@ -220,7 +220,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
 
           {/* Valor 3 */}
           <div className="bg-rose-50/30 rounded-xl border border-rose-100/90 p-4.5 space-y-2 hover:bg-rose-50/60 transition-colors">
-            <div className="flex items-center gap-2 text-[#d32f2f]">
+            <div className="flex items-center gap-2 text-[#b91c1c]">
               <ShieldCheck className="w-4 h-4" />
               <span className="text-xs font-bold text-rose-900">3. Defesa da Democracia e Direitos Humanos</span>
             </div>
@@ -231,7 +231,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
 
           {/* Valor 4 */}
           <div className="bg-rose-50/30 rounded-xl border border-rose-100/90 p-4.5 space-y-2 hover:bg-rose-50/60 transition-colors">
-            <div className="flex items-center gap-2 text-[#d32f2f]">
+            <div className="flex items-center gap-2 text-[#b91c1c]">
               <Leaf className="w-4 h-4" />
               <span className="text-xs font-bold text-rose-900">4. Sustentabilidade e Produção Consciente</span>
             </div>
@@ -242,7 +242,7 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
 
           {/* Valor 5 */}
           <div className="bg-rose-50/30 rounded-xl border border-rose-100/90 p-4.5 space-y-2 hover:bg-rose-50/60 transition-colors md:col-span-2 lg:col-span-2">
-            <div className="flex items-center gap-2 text-[#d32f2f]">
+            <div className="flex items-center gap-2 text-[#b91c1c]">
               <Compass className="w-4 h-4" />
               <span className="text-xs font-bold text-rose-900">5. Independência e Transparência</span>
             </div>
@@ -270,14 +270,14 @@ export const MissionSection: React.FC<MissionSectionProps> = ({
             onClick={onExploreMap}
             className="inline-flex items-center gap-1.5 bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200 text-xs font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-2xs"
           >
-            <MapPin className="w-3.5 h-3.5 text-[#d32f2f]" />
+            <MapPin className="w-3.5 h-3.5 text-[#b91c1c]" />
             <span>Ver no Mapa</span>
           </button>
 
 
           <button
             onClick={onOpenRegister}
-            className="inline-flex items-center gap-1.5 bg-[#d32f2f] hover:bg-[#b71c1c] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-all shadow-xs active:scale-95"
+            className="inline-flex items-center gap-1.5 bg-[#b91c1c] hover:bg-[#b71c1c] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-all shadow-xs active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Cadastrar Espaço</span>

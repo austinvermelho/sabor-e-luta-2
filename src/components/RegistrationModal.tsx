@@ -515,15 +515,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               </div>
 
               <div>
-                <div className="space-y-4">
-                  <OperatingHoursSelector 
-                    value={operatingHours} 
-                    onChange={setOperatingHours} 
-                  />
-                  <p className="text-xs text-neutral-500 italic bg-neutral-50 p-2 rounded">
-                    * Recomendamos sempre confirmar horários diretamente com o estabelecimento antes de visitar, pois podem sofrer alterações sem aviso prévio.
-                  </p>
-                </div>
+                <OperatingHoursSelector 
+                  value={operatingHours} 
+                  onChange={setOperatingHours} 
+                />
               </div>
             </div>
 

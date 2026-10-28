@@ -108,22 +108,22 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="curator-login-title" className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div 
-        className="relative bg-white dark:bg-neutral-900 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800"
+        className="relative bg-[#fbf8f3] rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-[#e4dcce]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#e4dcce] mb-4">
           <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-950/80 text-[#d32f2f] dark:text-rose-400 flex items-center justify-center">
+            <span className="w-7 h-7 rounded-full bg-red-100 text-[#b91c1c] flex items-center justify-center">
               <Lock className="w-3.5 h-3.5" aria-hidden="true" />
             </span>
-            <h3 id="curator-login-title" className="font-display text-lg font-bold text-neutral-900 dark:text-neutral-100">
+            <h3 id="curator-login-title" className="font-display text-lg font-bold text-[#141210]">
               Acesso à Curadoria
             </h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Fechar janela de login"
-            className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
+            className="p-1 text-stone-400 hover:text-stone-700 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-[#b91c1c]"
           >
             <X className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -131,12 +131,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
         {!isChangingPin ? (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Área restrita à equipe do <strong>Sabor &amp; Luta</strong> para moderar, aprovar e cadastrar estabelecimentos.
-            </p>
-
             <div>
-              <label htmlFor="curator-pin-input" className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+              <label htmlFor="curator-pin-input" className="block text-xs font-semibold text-stone-700 mb-1">
                 Senha de Acesso
               </label>
               <div className="relative">
@@ -154,13 +150,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                     setPin(e.target.value);
                     if (lockoutTimer === 0) setError('');
                   }}
-                  className="w-full pl-3 pr-10 py-2.5 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#d32f2f] focus:ring-2 focus:ring-[#d32f2f]/30 disabled:opacity-50 disabled:bg-neutral-100 dark:disabled:bg-neutral-800"
+                  className="w-full pl-3 pr-10 py-2.5 text-xs rounded-lg border border-[#e4dcce] bg-white text-[#141210] focus:outline-none focus:border-[#b91c1c] focus:ring-2 focus:ring-[#b91c1c]/20 disabled:opacity-50 disabled:bg-stone-100"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -168,16 +164,16 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
 
             {error && (
-              <div role="alert" className="p-3 bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 text-xs rounded-xl border border-red-200 dark:border-red-900 flex items-start gap-2 font-medium">
+              <div role="alert" className="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200 flex items-start gap-2 font-medium">
                 {lockoutTimer > 0 ? (
-                  <ShieldAlert className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <ShieldAlert className="w-4 h-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
                 )}
                 <div>
                   <p className="font-semibold">{error}</p>
                   {lockoutTimer > 0 && (
-                    <p className="text-[11px] mt-1 text-red-600 dark:text-red-400">
+                    <p className="text-[11px] mt-1 text-red-600">
                       Tente novamente em <strong className="tabular-nums font-bold">{lockoutTimer}s</strong>.
                     </p>
                   )}
@@ -188,7 +184,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             <button
               type="submit"
               disabled={lockoutTimer > 0}
-              className="w-full bg-[#d32f2f] hover:bg-[#b71c1c] text-white text-xs font-bold py-2.5 rounded-lg transition-colors shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-amber-300"
+              className="w-full bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs font-bold py-2.5 rounded-lg transition-colors shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-amber-300"
             >
               {lockoutTimer > 0 ? `Bloqueado (${lockoutTimer}s)` : 'Entrar na Curadoria'}
             </button>
@@ -200,7 +196,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                   setIsChangingPin(true);
                   setError('');
                 }}
-                className="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-white underline cursor-pointer focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
+                className="text-[11px] text-stone-500 hover:text-stone-800 underline cursor-pointer focus-visible:ring-2 focus-visible:ring-[#b91c1c]"
               >
                 Alterar senha de curadoria
               </button>
@@ -208,12 +204,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           </form>
         ) : (
           <form onSubmit={handleSaveNewPin} className="space-y-3.5">
-            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Informe a senha atual e a nova senha desejada.
-            </p>
-
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Senha Atual
               </label>
               <div className="relative">
@@ -226,13 +218,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                     setCurrentPinInput(e.target.value);
                     setCurrentPinError(false);
                   }}
-                  className="w-full pl-3 pr-10 py-2 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#d32f2f]"
+                  className="w-full pl-3 pr-10 py-2 text-xs rounded-lg border border-[#e4dcce] bg-white text-[#141210] focus:outline-none focus:border-[#b91c1c]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   aria-label={showCurrentPassword ? "Ocultar senha" : "Exibir senha"}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                 >
                   {showCurrentPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
@@ -240,7 +232,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Nova Senha (mínimo 4 caracteres)
               </label>
               <div className="relative">
@@ -252,13 +244,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                   placeholder="Digite a nova senha"
                   value={newPin}
                   onChange={(e) => setNewPin(e.target.value)}
-                  className="w-full pl-3 pr-10 py-2 text-xs rounded-lg border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[#d32f2f]"
+                  className="w-full pl-3 pr-10 py-2 text-xs rounded-lg border border-[#e4dcce] bg-white text-[#141210] focus:outline-none focus:border-[#b91c1c]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   aria-label={showNewPassword ? "Ocultar senha" : "Exibir senha"}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                 >
                   {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
@@ -266,14 +258,14 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             </div>
 
             {currentPinError && (
-              <div className="p-2 bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 text-xs rounded-lg flex items-center gap-1.5 font-medium border border-red-200 dark:border-red-900">
+              <div className="p-2 bg-red-50 text-red-700 text-xs rounded-lg flex items-center gap-1.5 font-medium border border-red-200">
                 <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />
                 <span>Senha atual incorreta.</span>
               </div>
             )}
 
             {pinUpdatedNotice && (
-              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 text-xs rounded-lg flex items-center gap-1.5 font-medium border border-emerald-200 dark:border-emerald-900">
+              <div className="p-2 bg-emerald-50 text-emerald-800 text-xs rounded-lg flex items-center gap-1.5 font-medium border border-emerald-200">
                 <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                 <span>Senha atualizada com sucesso!</span>
               </div>
@@ -288,13 +280,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                   setNewPin('');
                   setCurrentPinError(false);
                 }}
-                className="w-1/2 py-2 text-xs text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                className="w-1/2 py-2 text-xs text-stone-600 hover:bg-stone-200/50 rounded-lg transition-colors"
               >
                 Voltar
               </button>
               <button
                 type="submit"
-                className="w-1/2 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-semibold py-2 rounded-lg transition-colors"
+                className="w-1/2 bg-[#141210] hover:bg-stone-800 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
               >
                 Salvar Nova Senha
               </button>

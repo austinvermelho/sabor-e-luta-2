@@ -3,10 +3,13 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #fbf8f3;
+    color: #141210;
   }
   
   h1, h2, h3, .font-display {
     font-family: 'Oswald', sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -21,8 +24,8 @@
   border-radius: 0.75rem;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(211, 47, 47, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(20, 18, 16, 0.15), 0 8px 10px -6px rgba(20, 18, 16, 0.1);
+  border: 1px solid #e4dcce;
 }
 
 .leaflet-popup-content {

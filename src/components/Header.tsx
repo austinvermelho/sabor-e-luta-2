@@ -4,8 +4,6 @@ import {
   Clock, 
   ShieldCheck, 
   LogOut, 
-  Sun, 
-  Moon, 
   Menu, 
   X, 
   Heart,
@@ -22,8 +20,6 @@ interface HeaderProps {
   onOpenPending?: () => void;
   onLogoutAdmin?: () => void;
   onOpenAdminLogin?: () => void;
-  darkMode: boolean;
-  onToggleDarkMode: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,8 +32,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPending,
   onLogoutAdmin,
   onOpenAdminLogin,
-  darkMode,
-  onToggleDarkMode,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -47,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header role="banner" className="sticky top-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-rose-200/70 dark:border-neutral-800 transition-colors">
+    <header role="banner" className="sticky top-0 z-40 bg-[#fbf8f3]/95 backdrop-blur-md border-b border-[#e4dcce] transition-colors">
       
       {/* Curator Admin Bar (Only when logged in as admin) */}
       {isAdmin && (
@@ -95,26 +89,26 @@ export const Header: React.FC<HeaderProps> = ({
           
           {/* Brand Logo & Tagline */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <a href="/" className="flex items-center gap-2 group rounded-lg focus-visible:ring-2 focus-visible:ring-[#d32f2f] focus-visible:outline-none">
-              <span className="w-3 h-3 rounded-full bg-[#d32f2f] ring-4 ring-[#d32f2f]/20 shrink-0" aria-hidden="true" />
-              <span className="font-display text-lg sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 group-hover:text-[#d32f2f] transition-colors">
+            <a href="/" className="flex items-center gap-2 group rounded-lg focus-visible:ring-2 focus-visible:ring-[#b91c1c] focus-visible:outline-none">
+              <span className="w-3 h-3 rounded-full bg-[#b91c1c] ring-4 ring-[#b91c1c]/20 shrink-0" aria-hidden="true" />
+              <span className="font-display text-lg sm:text-2xl font-black tracking-tight text-[#141210] group-hover:text-[#b91c1c] transition-colors">
                 SABOR &amp; LUTA
               </span>
             </a>
-            <span className="hidden lg:inline-block text-[11px] font-medium text-rose-800/80 dark:text-rose-400 pl-2 border-l border-rose-200 dark:border-neutral-700">
+            <span className="hidden lg:inline-block text-[11px] font-semibold text-[#b91c1c] pl-2 border-l border-[#e4dcce]">
               Guia da Gastronomia Progressista
             </span>
           </div>
 
           {/* Desktop Navigation Tabs */}
-          <nav aria-label="Navegação principal" className="hidden md:flex items-center p-1 bg-rose-50/70 dark:bg-neutral-800 rounded-lg border border-rose-200/70 dark:border-neutral-700">
+          <nav aria-label="Navegação principal" className="hidden md:flex items-center p-1 bg-[#f3ede2] rounded-lg border border-[#e4dcce]">
             <button
               onClick={() => handleTabClick('all')}
               aria-current={activeTab === 'all' ? 'page' : undefined}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
                 activeTab === 'all'
-                  ? 'bg-white dark:bg-neutral-900 text-rose-950 dark:text-rose-200 font-bold shadow-xs border border-rose-200/80 dark:border-neutral-700'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:text-rose-900 dark:hover:text-rose-300 hover:bg-white/50 dark:hover:bg-neutral-700/50'
+                  ? 'bg-white text-[#141210] shadow-xs border border-[#e4dcce]'
+                  : 'text-[#141210] hover:text-[#b91c1c] hover:bg-white/60'
               }`}
             >
               Visão Geral
@@ -122,10 +116,10 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={() => handleTabClick('map')}
               aria-current={activeTab === 'map' ? 'page' : undefined}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
                 activeTab === 'map'
-                  ? 'bg-white dark:bg-neutral-900 text-rose-950 dark:text-rose-200 font-bold shadow-xs border border-rose-200/80 dark:border-neutral-700'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:text-rose-900 dark:hover:text-rose-300 hover:bg-white/50 dark:hover:bg-neutral-700/50'
+                  ? 'bg-white text-[#141210] shadow-xs border border-[#e4dcce]'
+                  : 'text-[#141210] hover:text-[#b91c1c] hover:bg-white/60'
               }`}
             >
               Mapa
@@ -133,45 +127,34 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={() => handleTabClick('catalog')}
               aria-current={activeTab === 'catalog' ? 'page' : undefined}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
                 activeTab === 'catalog'
-                  ? 'bg-white dark:bg-neutral-900 text-rose-950 dark:text-rose-200 font-bold shadow-xs border border-rose-200/80 dark:border-neutral-700'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:text-rose-900 dark:hover:text-rose-300 hover:bg-white/50 dark:hover:bg-neutral-700/50'
+                  ? 'bg-white text-[#141210] shadow-xs border border-[#e4dcce]'
+                  : 'text-[#141210] hover:text-[#b91c1c] hover:bg-white/60'
               }`}
             >
-              Catálogo {count > 0 && <span className="ml-1 text-rose-800 dark:text-rose-400 font-normal">({count})</span>}
+              Catálogo {count > 0 && <span className="ml-1 text-[#b91c1c] font-normal">({count})</span>}
             </button>
             <button
               onClick={() => handleTabClick('mission')}
               aria-current={activeTab === 'mission' ? 'page' : undefined}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
                 activeTab === 'mission'
-                  ? 'bg-white dark:bg-neutral-900 text-rose-950 dark:text-rose-200 font-bold shadow-xs border border-rose-200/80 dark:border-neutral-700'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:text-rose-900 dark:hover:text-rose-300 hover:bg-white/50 dark:hover:bg-neutral-700/50'
+                  ? 'bg-white text-[#141210] shadow-xs border border-[#e4dcce]'
+                  : 'text-[#141210] hover:text-[#b91c1c] hover:bg-white/60'
               }`}
             >
               Missão
             </button>
           </nav>
 
-          {/* Right Actions: Dark Mode + Register Button + Mobile Menu Toggle */}
+          {/* Right Actions: Register Button + Mobile Menu Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             
-            {/* Dark Mode Toggle Button */}
-            <button
-              onClick={onToggleDarkMode}
-              aria-pressed={darkMode}
-              aria-label={darkMode ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-              className="p-2 rounded-lg border border-rose-200/70 dark:border-neutral-700 bg-rose-50/50 dark:bg-neutral-800 hover:bg-rose-100/60 dark:hover:bg-neutral-700 text-neutral-800 dark:text-amber-400 transition-colors focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
-              title={darkMode ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-            >
-              {darkMode ? <Sun className="w-4 h-4 text-amber-400" aria-hidden="true" /> : <Moon className="w-4 h-4 text-neutral-800" aria-hidden="true" />}
-            </button>
-
             {/* Direct Cadastrar Espaço Button */}
             <button
               onClick={onOpenRegister}
-              className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#d32f2f] hover:bg-[#b71c1c] text-white text-xs sm:text-sm font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-xs active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-amber-300"
+              className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs sm:text-sm font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-xs active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-amber-300"
             >
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" aria-hidden="true" />
               <span className="hidden xs:inline">Cadastrar Espaço</span>
@@ -184,9 +167,9 @@ export const Header: React.FC<HeaderProps> = ({
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-drawer-menu"
               aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
-              className="md:hidden p-2 rounded-lg border border-rose-200/70 dark:border-neutral-700 bg-rose-50/70 dark:bg-neutral-800 hover:bg-rose-100 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
+              className="md:hidden p-2 rounded-lg border border-[#e4dcce] bg-[#f3ede2] hover:bg-[#ebe2d3] text-[#141210] transition-colors focus-visible:ring-2 focus-visible:ring-[#b91c1c]"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5 text-[#d32f2f]" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-[#b91c1c]" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
             </button>
 
           </div>
@@ -198,10 +181,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => handleTabClick('all')}
             aria-current={activeTab === 'all' ? 'page' : undefined}
-            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
               activeTab === 'all'
-                ? 'bg-[#d32f2f] text-white border-[#d32f2f] shadow-xs'
-                : 'bg-rose-50/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-rose-200/80 dark:border-neutral-700'
+                ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-xs'
+                : 'bg-[#f3ede2] text-[#141210] border-[#e4dcce]'
             }`}
           >
             Visão Geral
@@ -209,10 +192,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => handleTabClick('map')}
             aria-current={activeTab === 'map' ? 'page' : undefined}
-            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
               activeTab === 'map'
-                ? 'bg-[#d32f2f] text-white border-[#d32f2f] shadow-xs'
-                : 'bg-rose-50/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-rose-200/80 dark:border-neutral-700'
+                ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-xs'
+                : 'bg-[#f3ede2] text-[#141210] border-[#e4dcce]'
             }`}
           >
             Mapa
@@ -220,10 +203,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => handleTabClick('catalog')}
             aria-current={activeTab === 'catalog' ? 'page' : undefined}
-            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
               activeTab === 'catalog'
-                ? 'bg-[#d32f2f] text-white border-[#d32f2f] shadow-xs'
-                : 'bg-rose-50/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-rose-200/80 dark:border-neutral-700'
+                ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-xs'
+                : 'bg-[#f3ede2] text-[#141210] border-[#e4dcce]'
             }`}
           >
             Catálogo {count > 0 && `(${count})`}
@@ -231,10 +214,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => handleTabClick('mission')}
             aria-current={activeTab === 'mission' ? 'page' : undefined}
-            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#d32f2f] ${
+            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
               activeTab === 'mission'
-                ? 'bg-[#d32f2f] text-white border-[#d32f2f] shadow-xs'
-                : 'bg-rose-50/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-rose-200/80 dark:border-neutral-700'
+                ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-xs'
+                : 'bg-[#f3ede2] text-[#141210] border-[#e4dcce]'
             }`}
           >
             Missão
@@ -245,7 +228,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Expandable Drawer Menu */}
       {mobileMenuOpen && (
-        <div id="mobile-drawer-menu" className="md:hidden border-t border-rose-200/80 dark:border-neutral-800 bg-white/98 dark:bg-neutral-900/98 backdrop-blur-xl animate-in slide-in-from-top-2 duration-200 shadow-lg">
+        <div id="mobile-drawer-menu" className="md:hidden border-t border-[#e4dcce] bg-[#fbf8f3]/98 backdrop-blur-xl animate-in slide-in-from-top-2 duration-200 shadow-lg">
           <div className="px-4 py-4 space-y-3.5 max-w-7xl mx-auto">
             
             {/* Primary Action Button */}
@@ -254,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setMobileMenuOpen(false);
                 onOpenRegister();
               }}
-              className="w-full flex items-center justify-between p-3.5 bg-gradient-to-r from-[#d32f2f] to-[#b71c1c] text-white rounded-xl shadow-md transition-all active:scale-[0.99] text-left focus-visible:ring-2 focus-visible:ring-amber-300"
+              className="w-full flex items-center justify-between p-3.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white rounded-xl shadow-md transition-all active:scale-[0.99] text-left focus-visible:ring-2 focus-visible:ring-amber-300"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
@@ -262,28 +245,13 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-sm leading-tight">Cadastrar Novo Espaço</div>
-                  <div className="text-[11px] text-rose-100 font-normal">Indique um restaurante, bar ou café progressista</div>
+                  <div className="text-[11px] text-amber-100 font-normal">Indique um restaurante, bar ou café progressista</div>
                 </div>
               </div>
             </button>
 
             {/* Supplementary Options & Controls */}
-            <div className="space-y-2 pt-1 border-t border-rose-100 dark:border-neutral-800">
-              
-              {/* Dark Mode Row */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50/60 dark:bg-neutral-800/60 border border-rose-200/50 dark:border-neutral-700/60">
-                <div className="flex items-center gap-2.5 text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                  {darkMode ? <Sun className="w-4 h-4 text-amber-400" aria-hidden="true" /> : <Moon className="w-4 h-4 text-neutral-700 dark:text-neutral-300" aria-hidden="true" />}
-                  <span>Aparência</span>
-                </div>
-                <button
-                  onClick={onToggleDarkMode}
-                  aria-pressed={darkMode}
-                  className="px-3 py-1 text-xs font-bold rounded-lg bg-white dark:bg-neutral-700 text-neutral-800 dark:text-neutral-100 border border-rose-200 dark:border-neutral-600 shadow-2xs hover:bg-rose-50 transition-colors focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
-                >
-                  {darkMode ? 'Modo Escuro' : 'Modo Claro'}
-                </button>
-              </div>
+            <div className="space-y-2 pt-1 border-t border-[#e4dcce]">
 
               {/* Curator / Admin Section */}
               {isAdmin ? (

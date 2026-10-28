@@ -28,27 +28,27 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
       <div 
-        className="relative bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-neutral-200"
+        className="relative bg-[#fbf8f3] rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#e4dcce]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-[#fbf8f3] border-b border-[#e4dcce] px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-xs">
               <Clock className="w-4 h-4" />
             </span>
             <div>
-              <h3 className="font-display text-lg sm:text-xl font-bold text-neutral-900">
+              <h3 className="font-display text-lg sm:text-xl font-bold text-[#141210]">
                 Cadastros Aguardando Moderação ({pendingList.length})
               </h3>
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-stone-600">
                 Revise os espaços enviados pela comunidade antes de publicá-los no mapa
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-full hover:bg-neutral-100"
+            className="p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-200/50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -80,30 +80,30 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
                 return (
                   <div
                     key={item.id}
-                    className="p-5 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3.5 hover:border-neutral-300 transition-colors"
+                    className="p-5 rounded-xl border border-[#e4dcce] bg-[#f3ede2]/60 space-y-3.5 hover:border-[#d4c8b6] transition-colors"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 border-b border-neutral-200/60 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 border-b border-[#e4dcce] pb-3">
                       <div>
-                        <div className="flex items-center gap-2 text-xs text-neutral-500 mb-1">
-                          <span className="font-semibold text-neutral-800 flex items-center gap-1">
+                        <div className="flex items-center gap-2 text-xs text-stone-500 mb-1">
+                          <span className="font-semibold text-[#141210] flex items-center gap-1">
                             <span>{categoryInfo.icon}</span>
                             <span>{categoryInfo.label}</span>
                           </span>
-                          <span aria-hidden="true" className="text-neutral-300">·</span>
+                          <span aria-hidden="true" className="text-stone-300">·</span>
                           <span className="flex items-center gap-0.5">
-                            <MapPin className="w-3 h-3 text-[#d32f2f]" />
+                            <MapPin className="w-3 h-3 text-[#b91c1c]" />
                             {item.city} - {item.state}
                           </span>
                         </div>
-                        <h4 className="font-display text-xl font-bold text-neutral-900">
+                        <h4 className="font-display text-xl font-bold text-[#141210]">
                           {item.name}
                         </h4>
-                        <span className="text-xs text-neutral-600 block mt-0.5">
+                        <span className="text-xs text-stone-600 block mt-0.5">
                           {item.address}
                         </span>
                       </div>
 
-                      <span className="bg-amber-100 text-amber-900 text-[11px] font-bold px-2 py-0.5 rounded-md self-start shrink-0 border border-amber-200">
+                      <span className="bg-amber-100 text-amber-900 text-[11px] font-bold px-2 py-0.5 rounded-md self-start shrink-0 border border-amber-300">
                         Pendente
                       </span>
                     </div>
@@ -136,8 +136,8 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
                     )}
 
                     {/* Manifesto */}
-                    <div className="bg-white p-3.5 rounded-lg border border-neutral-200/80 text-xs text-neutral-700 leading-relaxed">
-                      <span className="font-semibold text-[11px] uppercase tracking-wider text-[#d32f2f] block mb-1">
+                    <div className="bg-white p-3.5 rounded-lg border border-[#e4dcce] text-xs text-stone-700 leading-relaxed">
+                      <span className="font-semibold text-[11px] uppercase tracking-wider text-[#b91c1c] block mb-1">
                         Manifesto & História
                       </span>
                       <p className="whitespace-pre-line">{item.description}</p>
@@ -148,14 +148,14 @@ export const PendingApprovalModal: React.FC<PendingApprovalModalProps> = ({
                       {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {item.tags.map((t, i) => (
-                            <span key={i} className="bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded text-[11px]">
+                            <span key={i} className="bg-[#f3ede2] text-stone-700 border border-[#e4dcce] px-2 py-0.5 rounded text-[11px]">
                               {t}
                             </span>
                           ))}
                         </div>
                       )}
 
-                      <div className="flex items-center gap-3 text-neutral-500 text-[11px]">
+                      <div className="flex items-center gap-3 text-stone-500 text-[11px]">
                         {item.instagram && <span>IG: {item.instagram}</span>}
                         {item.whatsapp && <span>Zap: {item.whatsapp}</span>}
                         {item.website && <span>Site: {item.website}</span>}

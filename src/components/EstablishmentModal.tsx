@@ -113,11 +113,17 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
             </div>
 
             {establishment.operatingHours && (
-              <div className="mt-2.5 flex items-center gap-2 text-xs text-neutral-700 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-200">
-                <Clock className="w-4 h-4 text-[#d32f2f] shrink-0" />
+              <div className="mt-2.5 flex items-center gap-2 text-xs text-neutral-800 bg-[#f3ede2] px-3 py-2 rounded-lg border border-[#e4dcce]">
+                <Clock className="w-4 h-4 text-[#b91c1c] shrink-0" />
                 <span><strong>Horário:</strong> {Object.entries(establishment.operatingHours).filter(([_, h]) => h.isOpen).map(([d, h]) => `${d.charAt(0).toUpperCase() + d.slice(1)}: ${h.open}-${h.close}`).join(', ')}</span>
               </div>
             )}
+
+            {/* Observação / Informação para o público */}
+            <div className="mt-2 p-2.5 bg-[#fef3c7]/70 border border-[#fde68a] rounded-lg text-[11px] text-[#78350f] italic leading-relaxed flex items-start gap-1.5">
+              <span className="font-bold shrink-0">*</span>
+              <span>Recomendamos sempre confirmar horários diretamente com o estabelecimento antes de visitar, pois podem sofrer alterações sem aviso prévio.</span>
+            </div>
           </div>
 
           {/* Curadoria: Categoria Sugerida */}

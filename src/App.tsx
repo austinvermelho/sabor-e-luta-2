@@ -65,20 +65,6 @@ export default function App() {
   // Navigation & View tabs: 'all' (visão geral), 'map' (mapa), 'catalog' (catálogo), 'mission' (missão & valores)
   const [activeTab, setActiveTab] = useState<'all' | 'map' | 'catalog' | 'mission'>('all');
   
-  // Dark mode state
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sabor_luta_dark') === 'true';
-    }
-    return false;
-  });
-
-  const toggleDarkMode = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem('sabor_luta_dark', String(next));
-  };
-  
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -281,12 +267,12 @@ export default function App() {
   };
 
   return (
-    <div className={darkMode ? 'dark min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-rose-900 selection:text-rose-100 transition-colors' : 'min-h-screen bg-[#faf5f5] bg-gradient-to-b from-rose-50/25 via-[#faf5f5] to-rose-50/15 flex flex-col font-sans text-neutral-900 selection:bg-rose-200 selection:text-rose-950 transition-colors'}>
+    <div className="min-h-screen bg-[#fbf8f3] text-[#141210] flex flex-col font-sans selection:bg-[#b91c1c] selection:text-white transition-colors">
       
       {/* WCAG 2.1 AA Skip to Content Link for Keyboard Navigation */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[#d32f2f] focus:text-white focus:font-bold focus:rounded-xl focus:shadow-2xl focus:ring-4 focus:ring-amber-300 transition-all"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[#b91c1c] focus:text-white focus:font-bold focus:rounded-xl focus:shadow-2xl focus:ring-4 focus:ring-amber-300 transition-all"
       >
         Pular para o conteúdo principal
       </a>
@@ -296,13 +282,13 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
-          className="bg-[#d32f2f] text-white py-2 px-4 text-xs font-semibold text-center flex items-center justify-center gap-2 shadow-md border-b border-rose-900 z-50 animate-in slide-in-from-top duration-300"
+          className="bg-[#b91c1c] text-white py-2 px-4 text-xs font-semibold text-center flex items-center justify-center gap-2 shadow-md border-b border-[#7f1d1d] z-50 animate-in slide-in-from-top duration-300"
         >
           <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" aria-hidden="true" />
           <span>Uma nova versão do <strong>Sabor &amp; Luta</strong> está disponível!</span>
           <button
             onClick={() => window.location.reload()}
-            className="ml-2 bg-white hover:bg-rose-50 text-[#d32f2f] font-bold px-3 py-1 rounded-md text-[11px] shadow-2xs transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-300"
+            className="ml-2 bg-white hover:bg-amber-50 text-[#b91c1c] font-bold px-3 py-1 rounded-md text-[11px] shadow-2xs transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-300"
           >
             Atualizar Agora
           </button>
@@ -323,8 +309,6 @@ export default function App() {
         onOpenPending={() => setIsPendingModalOpen(true)}
         onLogoutAdmin={handleLogoutAdmin}
         onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
-        darkMode={darkMode}
-        onToggleDarkMode={toggleDarkMode}
       />
 
       {/* Accessible Toast Notification */}
@@ -393,16 +377,16 @@ export default function App() {
 
         {/* Manifesto Callout Banner (Frase Destaque na Home) */}
         {activeTab === 'all' && (
-          <div className="bg-gradient-to-r from-rose-50/90 via-white to-rose-50/70 rounded-xl border border-rose-200/80 p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-[#f3ede2] rounded-xl border border-[#e4dcce] p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-rose-100 text-[#d32f2f] flex items-center justify-center shrink-0 border border-rose-200/80">
+              <span className="w-8 h-8 rounded-lg bg-[#b91c1c] text-white flex items-center justify-center shrink-0">
                 <Quote className="w-4 h-4" />
               </span>
               <div>
-                <p className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug">
+                <p className="text-xs sm:text-sm font-bold text-[#141210] leading-snug">
                   “Cada mesa é um espaço de debate. Cada brinde, um ato de resistência.”
                 </p>
-                <p className="text-[11px] text-neutral-500 hidden sm:block">
+                <p className="text-[11px] text-[#57534e] hidden sm:block">
                   Conectar você a lugares que compartilham dos seus ideais é a nossa forma de transformar a cidade.
                 </p>
               </div>
@@ -413,7 +397,7 @@ export default function App() {
                 setActiveTab('mission');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#d32f2f] hover:text-[#b71c1c] bg-white hover:bg-rose-50/80 px-3 py-1.5 rounded-lg border border-rose-200/80 transition-colors shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#b91c1c] hover:text-white bg-white hover:bg-[#b91c1c] px-3.5 py-1.5 rounded-lg border border-[#e4dcce] transition-colors shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
             >
               <span>Conhecer a Missão</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -437,12 +421,12 @@ export default function App() {
         ) : (
           <>
             {/* Minimalist Filter Bar with WCAG contrast */}
-            <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xs rounded-xl border border-rose-200/70 dark:border-neutral-800 p-3 sm:p-3.5 shadow-2xs">
+            <div className="bg-white rounded-xl border border-[#e4dcce] p-3 sm:p-3.5 shadow-2xs">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
                 
                 {/* Search Input */}
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-rose-500 dark:text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
+                  <Search className="w-4 h-4 text-[#b91c1c] absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden="true" />
                   <label htmlFor="search-input" className="sr-only">Buscar estabelecimentos no guia</label>
                   <input
                     id="search-input"
@@ -450,7 +434,7 @@ export default function App() {
                     placeholder="Buscar por nome, bairro, cidade ou proposta (ex: agroecologia, autogestão, samba)..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9.5 pr-4 py-2 text-xs sm:text-sm rounded-lg border border-rose-200/80 dark:border-neutral-700 focus:outline-none focus:border-[#d32f2f] dark:focus:border-rose-400 focus:ring-2 focus:ring-[#d32f2f]/30 transition-all bg-rose-50/25 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
+                    className="w-full pl-9.5 pr-4 py-2 text-xs sm:text-sm rounded-lg border border-[#e4dcce] focus:outline-none focus:border-[#b91c1c] focus:ring-2 focus:ring-[#b91c1c]/30 transition-all bg-[#fbf8f3] text-[#141210] placeholder:text-[#78716c]"
                   />
                 </div>
 
@@ -462,7 +446,7 @@ export default function App() {
                     id="category-select"
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="px-3 py-2 text-xs rounded-lg border border-rose-200/80 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-medium text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-[#d32f2f]"
+                    className="px-3 py-2 text-xs rounded-lg border border-[#e4dcce] bg-white font-medium text-[#141210] focus:outline-none focus:ring-2 focus:ring-[#b91c1c]"
                   >
                     <option value="all">Todas as Categorias</option>
                     {Object.values(CATEGORIES).map((cat) => (
@@ -480,7 +464,7 @@ export default function App() {
                         id="state-select"
                         value={selectedState}
                         onChange={(e) => setSelectedState(e.target.value)}
-                        className="px-3 py-2 text-xs rounded-lg border border-rose-200/80 dark:border-neutral-700 bg-white dark:bg-neutral-800 font-medium text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-[#d32f2f]"
+                        className="px-3 py-2 text-xs rounded-lg border border-[#e4dcce] bg-white font-medium text-[#141210] focus:outline-none focus:ring-2 focus:ring-[#b91c1c]"
                       >
                         <option value="all">Todos os Estados</option>
                         {availableStates.map((st) => (
@@ -498,7 +482,7 @@ export default function App() {
                       onClick={resetFilters}
                       aria-label="Limpar todos os filtros de busca"
                       title="Limpar filtros"
-                      className="p-2 text-rose-600 dark:text-rose-400 hover:text-[#d32f2f] rounded-lg hover:bg-rose-50 dark:hover:bg-neutral-800 transition-colors focus-visible:ring-2 focus-visible:ring-[#d32f2f]"
+                      className="p-2 text-[#b91c1c] hover:text-[#991b1b] rounded-lg hover:bg-[#f3ede2] transition-colors focus-visible:ring-2 focus-visible:ring-[#b91c1c]"
                     >
                       <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
@@ -665,26 +649,26 @@ export default function App() {
 
       </main>
 
-      {/* Clean Minimalist Footer with soft red undertone */}
-      <footer className="mt-16 bg-gradient-to-b from-white/80 to-rose-50/40 dark:from-neutral-900 dark:to-neutral-950 border-t border-rose-200/70 dark:border-neutral-800 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 dark:text-neutral-400">
+      {/* Clean Minimalist Footer with print/woodcut styling */}
+      <footer className="mt-16 bg-[#f3ede2] border-t border-[#e4dcce] py-8 px-4 sm:px-6 lg:px-8 transition-colors">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-600">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#d32f2f] ring-2 ring-[#d32f2f]/20" />
-            <span className="font-display font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#b91c1c] ring-2 ring-[#b91c1c]/20" />
+            <span className="font-display font-bold text-[#141210] tracking-tight">
               SABOR & LUTA
             </span>
-            <span aria-hidden="true" className="text-rose-200 dark:text-neutral-700">·</span>
-            <span className="text-neutral-500 dark:text-neutral-400">O guia da gastronomia progressista</span>
+            <span aria-hidden="true" className="text-[#e4dcce]">·</span>
+            <span className="text-neutral-600">O guia da gastronomia progressista</span>
           </div>
 
           {/* Clean User-Facing Links */}
-          <div className="flex items-center gap-5 text-neutral-600 flex-wrap">
+          <div className="flex items-center gap-5 text-neutral-700 flex-wrap">
             <button
               onClick={() => {
                 setActiveTab('mission');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="hover:text-rose-950 font-medium transition-colors cursor-pointer"
+              className="hover:text-[#b91c1c] font-semibold transition-colors cursor-pointer"
             >
               Nossa Missão
             </button>
@@ -694,15 +678,14 @@ export default function App() {
                 setEditingItem(null);
                 setIsRegisterOpen(true);
               }}
-              className="hover:text-rose-950 transition-colors cursor-pointer"
+              className="hover:text-[#b91c1c] font-semibold transition-colors cursor-pointer"
             >
               Cadastrar Espaço
             </button>
 
-
             <a
               href="mailto:saboreluta@gmail.com"
-              className="hover:text-rose-950 font-medium transition-colors flex items-center gap-1 text-rose-900 dark:text-rose-400"
+              className="hover:text-[#b91c1c] font-semibold transition-colors flex items-center gap-1 text-[#b91c1c]"
             >
               <span>Contato: saboreluta@gmail.com</span>
             </a>
