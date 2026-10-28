@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "Establishment": {
+      "title": "Establishment",
+      "description": "Mapeamento dos espaços da gastronomia progressista e agroecologia.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "address": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "city", "state", "address", "latitude", "longitude", "description", "status"]
+    },
+    "Volunteer": {
+      "title": "Volunteer",
+      "description": "Cadastro de voluntários da plataforma.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "availability": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "whatsapp", "city", "state", "status"]
+    }
+  },
+  "firestore": {
+    "/establishments/{establishmentId}": {
+      "schema": { "$ref": "#/entities/Establishment" },
+      "description": "Coleção de estabelecimentos do Sabor & Luta."
+    },
+    "/volunteers/{volunteerId}": {
+      "schema": { "$ref": "#/entities/Volunteer" },
+      "description": "Coleção de voluntários do Sabor & Luta."
+    }
+  }
+}
