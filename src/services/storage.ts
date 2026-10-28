@@ -1,10 +1,12 @@
 import { Establishment, AdSenseConfig, ProjectSupportConfig } from '../types';
 import { db } from '../lib/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
+const STORAGE_KEY = 'sabor_luta_estabelecimentos';
 const ADSENSE_KEY = 'sabor_luta_adsense_config';
 const PROJECT_PIX_KEY = 'sabor_luta_project_pix';
 
+// ... (Keep existing config helpers using localStorage)
 export const DEFAULT_PROJECT_SUPPORT: ProjectSupportConfig = {
   pixKey: 'contato@ordinario.bar',
   pixType: 'email',
@@ -49,11 +51,20 @@ export const saveProjectSupportConfig = (config: ProjectSupportConfig): void => 
 
 // Firestore Helpers
 const ESTABLISHMENTS_COL = collection(db, 'establishments');
+const MOCK_EXAMPLE_IDS = ['ex-armazem-campo-sp', 'ex-al-janiah-sp', 'ex-ordinario-bar'];
 
 export const fetchEstablishmentsAsync = async (): Promise<Establishment[]> => {
   try {
     const snapshot = await getDocs(ESTABLISHMENTS_COL);
-    return snapshot.docs.map(doc => doc.data() as Establishment);
+    const items: Establishment[] = [];
+    for (const docSnap of snapshot.docs) {
+      if (MOCK_EXAMPLE_IDS.includes(docSnap.id) || docSnap.id.startsWith('ex-')) {
+        deleteDoc(docSnap.ref).catch(() => {});
+      } else {
+        items.push(docSnap.data() as Establishment);
+      }
+    }
+    return items;
   } catch (err) {
     console.error('Erro ao buscar do Firestore:', err);
     return [];
@@ -80,12 +91,14 @@ export const deleteEstablishmentFromAPI = async (id: string): Promise<Establishm
   }
 };
 
-export const saveEstablishmentAsync = async (item: Establishment, _isEdit: boolean): Promise<Establishment[]> => {
+export const saveEstablishmentAsync = async (item: Establishment, isEdit: boolean): Promise<Establishment[]> => {
   await syncEstablishmentToAPI(item);
   return await fetchEstablishmentsAsync() || [];
 };
 
 export const approveEstablishmentAsync = async (id: string): Promise<Establishment[]> => {
+  // We need to fetch it first to approve it, or pass the object
+  // Simplify: update status in firestore
   const items = await fetchEstablishmentsAsync();
   const target = items.find(i => i.id === id);
   if (target) {
@@ -104,10 +117,12 @@ export const deleteEstablishmentAsync = async (id: string): Promise<Establishmen
   return await fetchEstablishmentsAsync() || [];
 };
 
+// Placeholder for remaining local storage functions for now
 export const getEstablishments = (): Establishment[] => [];
-export const saveEstablishments = (_items: Establishment[]): void => {};
+export const saveEstablishments = (items: Establishment[]): void => {};
 export const clearLocalCacheAndReload = (): void => { window.location.reload(); };
 
+// ... (Keep existing AdSense config and SUGGESTED_EXAMPLES)
 export const getAdSenseConfig = (): AdSenseConfig => {
   try {
     const raw = localStorage.getItem(ADSENSE_KEY);
@@ -129,7 +144,6 @@ export const getAdSenseConfig = (): AdSenseConfig => {
     };
   }
 };
-
 export const saveAdSenseConfig = (config: AdSenseConfig): void => {
   try {
     localStorage.setItem(ADSENSE_KEY, JSON.stringify(config));

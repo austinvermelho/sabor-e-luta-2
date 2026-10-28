@@ -24,8 +24,7 @@ import {
   getProjectSupportConfig,
   getAdminPin,
   setAdminPin,
-  clearLocalCacheAndReload,
-  SUGGESTED_EXAMPLES
+  clearLocalCacheAndReload
 } from './services/storage';
 import { Header } from './components/Header';
 import { Map } from './components/Map';
@@ -251,13 +250,6 @@ export default function App() {
     if (selectedId === id) setSelectedId(null);
     if (activeModalItem?.id === id) setActiveModalItem(null);
     showToast('Espaço removido do mapa.');
-  };
-
-  // Load samples on explicit user click
-  const handleLoadSamples = () => {
-    saveEstablishments(SUGGESTED_EXAMPLES);
-    setEstablishments(SUGGESTED_EXAMPLES);
-    showToast('3 estabelecimentos sugeridos foram carregados e aprovados.');
   };
 
   // Interactive Pin Picking on Map
@@ -523,7 +515,6 @@ export default function App() {
               setEditingItem(null);
               setIsRegisterOpen(true);
             }}
-            onLoadSamples={handleLoadSamples}
           />
         ) : (
           <>

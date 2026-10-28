@@ -9,6 +9,7 @@ import {
   Trash2, 
   Edit3, 
   Navigation2,
+  Heart,
   Share2,
   Copy,
   Check,
@@ -56,13 +57,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
   const getOpenStatus = (hours?: OperatingHours) => {
     if (!hours) return { isOpen: true, label: 'Horário sob consulta', badgeColor: 'bg-neutral-100 text-neutral-700 border-neutral-200' };
     
-    // Simple check if any day is marked open
-    const hasAnyOpen = Object.values(hours).some(h => h.isOpen);
-    if (!hasAnyOpen) {
-      return { isOpen: false, label: 'Fechado temporariamente', badgeColor: 'bg-neutral-100 text-neutral-600 border-neutral-200' };
-    }
-
-    return { isOpen: true, label: 'Horário definido', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+    return { isOpen: true, label: 'Horário cadastrado', badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
   };
 
   const openStatus = getOpenStatus(establishment.operatingHours);
@@ -70,6 +65,8 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
   const fullAddressQuery = `${establishment.address}, ${establishment.city} - ${establishment.state}, Brasil`;
   const mapExternalUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddressQuery)}`;
   const mapRouteUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddressQuery)}`;
+
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -85,7 +82,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-full transition-colors"
             aria-label="Fechar modal"
           >
             <X className="w-5 h-5" />
@@ -122,6 +119,16 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Curadoria: Categoria Sugerida */}
+          {establishment.suggestedCategory && isAdmin && (
+            <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs text-amber-950 flex items-center gap-2">
+              <span className="text-sm" aria-hidden="true">💡</span>
+              <span>
+                <strong>Sugestão original de categoria:</strong> "{establishment.suggestedCategory}"
+              </span>
+            </div>
+          )}
 
           {/* Social / Solidarity Manifesto */}
           <div className="bg-neutral-50 rounded-xl p-4.5 border border-neutral-200">
@@ -198,6 +205,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
               <span>Traçar Rota GPS</span>
             </a>
           </div>
+
 
           {/* Social Contact Buttons */}
           {(establishment.instagram || establishment.whatsapp || establishment.website) && (
@@ -284,13 +292,15 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
 
               <button
                 onClick={handleCopyLink}
-                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors cursor-pointer"
+                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50 text-xs font-semibold transition-colors"
               >
                 <Copy className="w-3.5 h-3.5 text-neutral-500" />
                 <span>{copied ? 'Copiado!' : 'Copiar Link'}</span>
               </button>
             </div>
           </div>
+
+
 
           {/* Edit / Remove Management (VISIBLE ONLY FOR ADMIN/CURATORS) */}
           {isAdmin && (
@@ -306,7 +316,7 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
                     onEdit(establishment);
                     onClose();
                   }}
-                  className="text-xs text-neutral-700 hover:text-neutral-900 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white border border-neutral-200 hover:bg-neutral-50 cursor-pointer"
+                  className="text-xs text-neutral-700 hover:text-neutral-900 font-medium inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white border border-neutral-200 hover:bg-neutral-50"
                 >
                   <Edit3 className="w-3 h-3" />
                   <span>Editar</span>
