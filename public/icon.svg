@@ -1,16 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
-  <rect width="512" height="512" rx="100" fill="#b91c1c"/>
-  <circle cx="256" cy="256" r="210" fill="#141210" opacity="0.15"/>
-  <!-- Central emblem: Red Star & Leaf/Fork design -->
-  <g transform="translate(256,230) scale(1.3)">
-    <!-- Star background -->
-    <path d="M0,-90 L24,-28 L90,-22 L40,24 L55,88 L0,50 L-55,88 L-40,24 L-90,-22 L-24,-28 Z" fill="#fcfbf7" />
-    <!-- Fork accent inside -->
-    <path d="M-15,-40 L-15,-10 A15,15 0 0,0 15,-10 L15,-40 M0,-10 L0,45" stroke="#b91c1c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <line x1="-10" y1="-40" x2="-10" y2="-25" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"/>
-    <line x1="0" y1="-40" x2="0" y2="-25" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"/>
-    <line x1="10" y1="-40" x2="10" y2="-25" stroke="#b91c1c" stroke-width="6" stroke-linecap="round"/>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#b91c1c"/>
+  
+  <!-- Subtle inner border framing -->
+  <rect x="24" y="24" width="464" height="464" rx="72" fill="none" stroke="#fcfbf7" stroke-width="8" opacity="0.35"/>
+
+  <!-- Stacked Typographic Branding: SABOR & LUTA (No star) -->
+  <g text-anchor="middle" font-family="'Oswald', 'Plus Jakarta Sans', sans-serif" font-weight="700" fill="#fcfbf7">
+    <!-- SABOR -->
+    <text x="256" y="190" font-size="110" letter-spacing="8">SABOR</text>
+    
+    <!-- Ampersand with side lines -->
+    <text x="256" y="295" font-size="80" fill="#fef08a" font-weight="800">&amp;</text>
+    <line x1="120" y1="285" x2="200" y2="285" stroke="#fef08a" stroke-width="8" stroke-linecap="round"/>
+    <line x1="312" y1="285" x2="392" y2="285" stroke="#fef08a" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- LUTA -->
+    <text x="256" y="415" font-size="120" letter-spacing="12">LUTA</text>
   </g>
-  <!-- Text banner in lower part -->
-  <text x="256" y="440" font-family="'Oswald', sans-serif" font-weight="700" font-size="42" fill="#fcfbf7" text-anchor="middle" letter-spacing="4">SABOR &amp; LUTA</text>
 </svg>
