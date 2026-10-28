@@ -655,7 +655,7 @@ export default function App() {
                 <div className="lg:col-span-5 space-y-3.5">
                   <div className="flex items-center justify-between text-xs text-neutral-600 font-medium px-1">
                     <span className="flex items-center gap-1.5">
-                      Exibindo <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-100/80 text-rose-900 font-bold text-[11px]">{filteredEstablishments.length}</span> de {approvedEstablishments.length} locais aprovados
+                      Exibindo <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-100/80 text-rose-900 font-bold text-[11px]">{filteredEstablishments.length}</span> de {approvedEstablishments.length} locais
                     </span>
                     <button
                       onClick={() => {
@@ -719,7 +719,7 @@ export default function App() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs text-neutral-500 font-medium">
                   <span>
-                    Mapa com <strong>{filteredEstablishments.length}</strong> locais aprovados
+                    Mapa com <strong>{filteredEstablishments.length}</strong> locais
                   </span>
                   <span className="text-[11px] text-neutral-400">
                     OpenStreetMap livre e integrado ao Google Maps
