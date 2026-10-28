@@ -56,11 +56,9 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     if (lockoutTimer > 0) return;
 
     const cleanInput = pin.trim();
-    const targetPin = (currentPin || 'sabor2026').trim();
-    // Allow configured current pin, default 'sabor2026', or standard admin keys
-    const validKeys = Array.from(new Set([targetPin, 'sabor2026', 'luta2026', 'saboreluta', 'sabor&luta']));
+    const targetPin = (currentPin || 'ordinario8054').trim();
 
-    if (validKeys.includes(cleanInput)) {
+    if (cleanInput === targetPin) {
       setError('');
       setFailedAttempts(0);
       setPin('');
@@ -84,10 +82,9 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   const handleSaveNewPin = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = currentPinInput.trim();
-    const targetPin = (currentPin || 'sabor2026').trim();
-    const validKeys = Array.from(new Set([targetPin, 'sabor2026', 'luta2026', 'saboreluta', 'sabor&luta']));
+    const targetPin = (currentPin || 'ordinario8054').trim();
 
-    if (!validKeys.includes(cleanInput)) {
+    if (cleanInput !== targetPin) {
       setCurrentPinError(true);
       return;
     }

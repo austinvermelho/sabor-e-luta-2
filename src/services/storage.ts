@@ -27,9 +27,14 @@ export const getProjectSupportConfig = (): ProjectSupportConfig => {
 const ADMIN_PIN_KEY = 'sabor_luta_admin_pin';
 export const getAdminPin = (): string => {
   try {
-    return localStorage.getItem(ADMIN_PIN_KEY) || 'sabor2026';
+    const stored = localStorage.getItem(ADMIN_PIN_KEY);
+    if (!stored || stored === 'sabor2026' || stored === 'luta2026' || stored === 'saboreluta' || stored === 'sabor&luta') {
+      localStorage.setItem(ADMIN_PIN_KEY, 'ordinario8054');
+      return 'ordinario8054';
+    }
+    return stored;
   } catch {
-    return 'sabor2026';
+    return 'ordinario8054';
   }
 };
 
