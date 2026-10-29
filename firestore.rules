@@ -8,5 +8,8 @@ service cloud.firestore {
     match /volunteers/{volunteerId} {
       allow read, write: if true;
     }
+    match /checkins/{checkinId} {
+      allow read, write: if true;
+    }
   }
 }

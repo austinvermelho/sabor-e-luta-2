@@ -9,7 +9,8 @@ import {
   Heart,
   Lock,
   HandHeart,
-  Users
+  Users,
+  Stamp
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -25,6 +26,8 @@ interface HeaderProps {
   onOpenVolunteerModal?: () => void;
   onOpenVolunteerListModal?: () => void;
   pendingVolunteerCount?: number;
+  onOpenPassport?: () => void;
+  passportStampCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -40,7 +43,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenVolunteerModal,
   onOpenVolunteerListModal,
   pendingVolunteerCount = 0,
+  onOpenPassport,
+  passportStampCount = 0,
 }) => {
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleTabClick = (tab: 'all' | 'map' | 'catalog' | 'mission') => {
@@ -173,19 +179,38 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </nav>
 
-          {/* Right Actions: Volunteer CTA + Register Button + Mobile Menu Toggle */}
+          {/* Right Actions: Passaporte + Volunteer CTA + Register Button + Mobile Menu Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             
+            {/* Passaporte Sabor & Luta CTA */}
+            {onOpenPassport && (
+              <button
+                onClick={onOpenPassport}
+                className="inline-flex items-center gap-1.5 bg-stone-900 hover:bg-stone-950 text-amber-100 border border-stone-800 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer shadow-xs active:scale-95 relative"
+                title="Abrir Passaporte Sabor & Luta"
+              >
+                <Stamp className="w-3.5 h-3.5 text-amber-300 shrink-0" aria-hidden="true" />
+                <span className="hidden sm:inline font-serif">Passaporte</span>
+                <span className="sm:hidden font-serif">Passaporte</span>
+                {passportStampCount > 0 && (
+                  <span className="bg-red-800 text-amber-100 text-[10px] font-bold px-1.5 py-0.2 rounded-full border border-red-700">
+                    {passportStampCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* Volunteer CTA */}
             {onOpenVolunteerModal && (
               <button
                 onClick={onOpenVolunteerModal}
-                className="hidden sm:inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-[#b91c1c] border border-rose-200 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer shadow-2xs"
+                className="hidden lg:inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-[#b91c1c] border border-rose-200 text-xs font-bold px-3 py-2 rounded-lg transition-all cursor-pointer shadow-2xs"
               >
                 <HandHeart className="w-3.5 h-3.5 text-[#b91c1c]" aria-hidden="true" />
                 <span>Seja Voluntário(a)</span>
               </button>
             )}
+
 
             {/* Direct Cadastrar Espaço Button */}
             <button

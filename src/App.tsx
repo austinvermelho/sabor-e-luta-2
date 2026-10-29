@@ -46,9 +46,17 @@ import { PendingApprovalModal } from './components/PendingApprovalModal';
 import { VolunteerModal } from './components/VolunteerModal';
 import { VolunteerListModal } from './components/VolunteerListModal';
 import { EmptyState } from './components/EmptyState';
+
 import { MissionSection } from './components/MissionSection';
 import { SiteDisclaimer } from './components/SiteDisclaimer';
+import { AuthModal } from './components/AuthModal';
+import { PassportModal } from './components/PassportModal';
+import { CheckInModal } from './components/CheckInModal';
+
+import { subscribeToAuth, subscribeToUserCheckIns } from './services/passport';
+import { UserProfile, CheckIn } from './types';
 import { CATEGORIES } from './utils/categories';
+
 
 export default function App() {
   // Establishments state - initialized from local storage then updated from central API
@@ -60,6 +68,15 @@ export default function App() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [isVolunteerModalOpen, setIsVolunteerModalOpen] = useState(false);
   const [isVolunteerListModalOpen, setIsVolunteerListModalOpen] = useState(false);
+
+  // User Passport & Auth State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [userCheckIns, setUserCheckIns] = useState<CheckIn[]>([]);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isPassportModalOpen, setIsPassportModalOpen] = useState(false);
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [targetEstablishmentForCheckIn, setTargetEstablishmentForCheckIn] = useState<Establishment | null>(null);
+
 
   
   // Registration Form State
@@ -184,6 +201,36 @@ export default function App() {
       unsubscribeVol();
     };
   }, []);
+
+  // Real-time synchronization of Firebase Auth & User Check-ins
+  useEffect(() => {
+    let isMounted = true;
+    let unsubscribeCheckIns = () => {};
+
+    const unsubscribeAuth = subscribeToAuth((usr) => {
+      if (isMounted) {
+        setCurrentUser(usr);
+        if (usr) {
+          unsubscribeCheckIns();
+          unsubscribeCheckIns = subscribeToUserCheckIns(usr.uid, (cItems) => {
+            if (isMounted && Array.isArray(cItems)) {
+              setUserCheckIns(cItems);
+            }
+          });
+        } else {
+          unsubscribeCheckIns();
+          setUserCheckIns([]);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribeAuth();
+      unsubscribeCheckIns();
+    };
+  }, []);
+
 
   // Volunteer Handlers
   const handleSaveVolunteer = async (vData: Volunteer) => {
@@ -409,7 +456,10 @@ export default function App() {
           setIsVolunteerListModalOpen(true);
         }}
         pendingVolunteerCount={volunteers.filter((v) => v.status === 'pending').length}
+        onOpenPassport={() => setIsPassportModalOpen(true)}
+        passportStampCount={new Set(userCheckIns.map((c) => c.establishmentId)).size}
       />
+
 
 
       {/* Accessible Toast Notification */}
@@ -690,9 +740,15 @@ export default function App() {
                           isSelected={item.id === selectedId}
                           onSelect={(id) => setSelectedId(id)}
                           onOpenDetails={(item) => setActiveModalItem(item)}
+                          onOpenCheckIn={(item) => {
+                            setTargetEstablishmentForCheckIn(item);
+                            setIsCheckInModalOpen(true);
+                          }}
+                          isVisited={userCheckIns.some((c) => c.establishmentId === item.id)}
                           userLocation={userLocation}
                         />
                       ))}
+
                     </div>
                   )}
 
@@ -780,9 +836,15 @@ export default function App() {
                           isSelected={item.id === selectedId}
                           onSelect={(id) => setSelectedId(id)}
                           onOpenDetails={(item) => setActiveModalItem(item)}
+                          onOpenCheckIn={(item) => {
+                            setTargetEstablishmentForCheckIn(item);
+                            setIsCheckInModalOpen(true);
+                          }}
+                          isVisited={userCheckIns.some((c) => c.establishmentId === item.id)}
                           userLocation={userLocation}
                         />
                       ))}
+
                     </div>
                   )}
                 </div>
@@ -882,6 +944,11 @@ export default function App() {
           setIsRegisterOpen(true);
         }}
         onDelete={handleDeleteEstablishment}
+        onOpenCheckIn={(item) => {
+          setTargetEstablishmentForCheckIn(item);
+          setIsCheckInModalOpen(true);
+        }}
+        isVisited={activeModalItem ? userCheckIns.some((c) => c.establishmentId === activeModalItem.id) : false}
         isAdmin={isAdmin}
         userLocation={userLocation}
       />
@@ -949,7 +1016,49 @@ export default function App() {
         }}
       />
 
+      {/* Auth Modal (Email / Password) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(usr) => {
+          setCurrentUser(usr);
+          showToast('Conectado ao seu Passaporte!');
+        }}
+      />
+
+      {/* Passport Booklet Modal */}
+      <PassportModal
+        isOpen={isPassportModalOpen}
+        onClose={() => setIsPassportModalOpen(false)}
+        user={currentUser}
+        checkIns={userCheckIns}
+        establishments={establishments}
+        onOpenCheckIn={(item) => {
+          setTargetEstablishmentForCheckIn(item);
+          setIsCheckInModalOpen(true);
+        }}
+        onRequestAuth={() => setIsAuthModalOpen(true)}
+        onUpdateCheckIns={(updated) => setUserCheckIns(updated)}
+      />
+
+      {/* Check-In Visit Registration Modal */}
+      <CheckInModal
+        isOpen={isCheckInModalOpen}
+        establishment={targetEstablishmentForCheckIn}
+        user={currentUser}
+        onClose={() => {
+          setIsCheckInModalOpen(false);
+          setTargetEstablishmentForCheckIn(null);
+        }}
+        onSuccess={(updated) => {
+          setUserCheckIns(updated);
+          showToast('Carimbo registrado com sucesso!');
+        }}
+        onRequestAuth={() => setIsAuthModalOpen(true)}
+      />
+
     </div>
+
   );
 }
 

@@ -35,6 +35,22 @@
         "createdAt": { "type": "string" }
       },
       "required": ["id", "name", "email", "whatsapp", "city", "state", "status"]
+    },
+    "CheckIn": {
+      "title": "CheckIn",
+      "description": "Registro de visitas e carimbos no Passaporte Sabor & Luta.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "establishmentId": { "type": "string" },
+        "visitDate": { "type": "string" },
+        "experienceNote": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "establishmentId", "visitDate", "experienceNote", "createdAt"]
     }
   },
   "firestore": {
@@ -45,6 +61,11 @@
     "/volunteers/{volunteerId}": {
       "schema": { "$ref": "#/entities/Volunteer" },
       "description": "Coleção de voluntários do Sabor & Luta."
+    },
+    "/checkins/{checkinId}": {
+      "schema": { "$ref": "#/entities/CheckIn" },
+      "description": "Coleção de check-ins e registros de visitas no passaporte."
     }
   }
 }
+

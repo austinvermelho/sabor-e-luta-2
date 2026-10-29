@@ -1,14 +1,17 @@
 import React from 'react';
-import { MapPin, ArrowUpRight, Compass, Navigation } from 'lucide-react';
+import { MapPin, ArrowUpRight, Compass, Navigation, Stamp } from 'lucide-react';
 import { Establishment } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { calculateDistanceKm, formatDistancePT } from '../utils/geo';
+import { getOpeningStatusPT } from '../utils/hours';
 
 interface EstablishmentCardProps {
   establishment: Establishment;
   isSelected: boolean;
   onSelect: (id: string) => void;
   onOpenDetails: (item: Establishment) => void;
+  onOpenCheckIn?: (item: Establishment) => void;
+  isVisited?: boolean;
   userLocation?: { lat: number; lng: number } | null;
 }
 
@@ -17,8 +20,11 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   isSelected,
   onSelect,
   onOpenDetails,
+  onOpenCheckIn,
+  isVisited = false,
   userLocation,
 }) => {
+  const openStatus = getOpeningStatusPT(establishment.operatingHours);
   const categoryInfo = CATEGORIES[establishment.category] || {
     label: 'Espaço Progressista',
     shortLabel: 'Progressista',
@@ -43,12 +49,20 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
     >
       <div>
         {/* Unboxed Metadata with woodcut/print accents */}
-        <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-2 font-medium">
+        <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-8 font-medium">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[#141210] font-bold flex items-center gap-1 bg-[#f3ede2] px-2 py-0.5 rounded-md border border-[#e4dcce]">
               <span>{categoryInfo.icon}</span>
               <span>{categoryInfo.shortLabel}</span>
             </span>
+
+            {/* Stamp Badge if Visited */}
+            {isVisited && (
+              <span className="inline-flex items-center gap-1 bg-red-100 text-red-900 border border-red-300 px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider">
+                <Stamp className="w-3 h-3 text-red-800 shrink-0" />
+                <span>Carimbado!</span>
+              </span>
+            )}
 
             {/* Distance Badge if user location is active */}
             {distanceStr && (
@@ -57,14 +71,8 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
                 <span>a {distanceStr} de você</span>
               </span>
             )}
-
-            <span aria-hidden="true" className="text-[#e4dcce]">·</span>
-            <span className="flex items-center gap-0.5 text-neutral-700 truncate max-w-[180px]" title={establishment.address}>
-              <MapPin className="w-3 h-3 text-[#b91c1c] shrink-0" />
-              <span className="truncate">{establishment.address}</span>
-            </span>
           </div>
-
+          
           <a
             href={googleMapsUrl}
             target="_blank"
@@ -78,10 +86,21 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
           </a>
         </div>
 
-        {/* Title */}
-        <h3 className="font-display text-lg font-bold text-[#141210] group-hover:text-[#b91c1c] transition-colors leading-tight mb-1.5">
-          {establishment.name}
-        </h3>
+        {/* Name, Status & Address */}
+        <div className="flex flex-col gap-1.5 mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-lg font-bold text-[#141210] group-hover:text-[#b91c1c] transition-colors leading-tight">
+              {establishment.name}
+            </h3>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${openStatus.badgeColor}`}>
+              {openStatus.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 text-neutral-600 text-[11px]" title={establishment.address}>
+            <MapPin className="w-3 h-3 text-[#b91c1c] shrink-0" />
+            <span className="truncate">{establishment.address}</span>
+          </div>
+        </div>
 
         {/* Snippet */}
         <p className="text-xs text-[#44403c] line-clamp-2 leading-relaxed mb-3">
@@ -107,21 +126,39 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="pt-2.5 border-t border-[#e4dcce] flex items-center justify-between gap-3 text-xs">
-        <span className="text-neutral-500 text-[11px] truncate max-w-[200px]">
+      <div className="pt-2.5 border-t border-[#e4dcce] flex items-center justify-between gap-2 text-xs">
+        <span className="text-neutral-500 text-[11px] truncate max-w-[150px]">
           {establishment.city} - {establishment.state}
         </span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenDetails(establishment);
-          }}
-          className="inline-flex items-center gap-1 font-bold text-[#b91c1c] hover:text-[#991b1b] hover:bg-[#f3ede2] px-2 py-1 rounded-md transition-colors text-xs shrink-0 cursor-pointer"
-        >
-          <span>Ver Detalhes</span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
-        </button>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onOpenCheckIn && !isVisited && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenCheckIn(establishment);
+              }}
+              className="inline-flex items-center gap-1 font-bold px-2 py-1 rounded-md transition-colors text-xs cursor-pointer border bg-stone-100 text-stone-800 border-stone-200 hover:bg-stone-200"
+              title="Carimbar no Passaporte"
+            >
+              <Stamp className="w-3.5 h-3.5 text-red-800" />
+              <span>Carimbar</span>
+            </button>
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDetails(establishment);
+            }}
+            className="inline-flex items-center gap-1 font-bold text-[#b91c1c] hover:text-[#991b1b] hover:bg-[#f3ede2] px-2 py-1 rounded-md transition-colors text-xs shrink-0 cursor-pointer"
+          >
+            <span>Ver Detalhes</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
 };
+

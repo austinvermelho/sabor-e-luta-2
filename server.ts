@@ -255,6 +255,74 @@ app.delete('/api/volunteers/:id', (req, res) => {
   res.json({ success: true, items: filtered });
 });
 
+// Check-ins Persistence and API Routes
+const CHECKINS_FILE = path.join(__dirname, 'data', 'checkins.json');
+
+function readCheckinsData(): any[] {
+  try {
+    if (!fs.existsSync(CHECKINS_FILE)) {
+      writeCheckinsData([]);
+      return [];
+    }
+    const raw = fs.readFileSync(CHECKINS_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Error reading checkins data file:', error);
+    return [];
+  }
+}
+
+function writeCheckinsData(data: any[]): void {
+  try {
+    const dir = path.dirname(CHECKINS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(CHECKINS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Error writing checkins data file:', error);
+  }
+}
+
+app.get('/api/checkins', (req, res) => {
+  const { userId } = req.query;
+  const items = readCheckinsData();
+  if (userId) {
+    return res.json(items.filter((item: any) => item.userId === userId));
+  }
+  res.json(items);
+});
+
+app.post('/api/checkins', (req, res) => {
+  const newItem = req.body;
+  if (!newItem || !newItem.id || !newItem.userId || !newItem.establishmentId) {
+    return res.status(400).json({ error: 'Check-in inválido.' });
+  }
+
+  const current = readCheckinsData();
+  const existingIndex = current.findIndex((c) => c.id === newItem.id);
+
+  if (existingIndex >= 0) {
+    current[existingIndex] = newItem;
+  } else {
+    current.unshift(newItem);
+  }
+
+  writeCheckinsData(current);
+  res.json({ success: true, items: current.filter((item: any) => item.userId === newItem.userId) });
+});
+
+app.delete('/api/checkins/:id', (req, res) => {
+  const { id } = req.params;
+  const current = readCheckinsData();
+  const filtered = current.filter((c) => c.id !== id);
+
+  writeCheckinsData(filtered);
+  res.json({ success: true, items: filtered });
+});
+
+
 
 // Mount Vite in development
 async function startServer() {

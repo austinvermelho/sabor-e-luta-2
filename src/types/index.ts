@@ -97,3 +97,23 @@ export interface Volunteer {
   createdAt: string;
 }
 
+export interface CheckIn {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  establishmentId: string;
+  visitDate: string;
+  experienceNote: string;
+  photoUrl?: string;
+  photoUrls?: string[];
+  createdAt: string;
+}
+
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName?: string | null;
+}
+
+
