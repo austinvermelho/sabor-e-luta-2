@@ -53,6 +53,8 @@ import { AuthModal } from './components/AuthModal';
 import { PassportModal } from './components/PassportModal';
 import { CheckInModal } from './components/CheckInModal';
 import { CuratorPanelModal } from './components/CuratorPanelModal';
+import { MySpacesView } from './components/MySpacesView';
+import { OwnerEditModal } from './components/OwnerEditModal';
 
 import { 
   subscribeToAuth, 
@@ -105,8 +107,12 @@ export default function App() {
   const [adminPin, setAdminPinState] = useState(getAdminPin());
   
 
-  // Navigation & View tabs: 'all' (visão geral), 'map' (mapa), 'catalog' (catálogo), 'mission' (missão & valores)
-  const [activeTab, setActiveTab] = useState<'all' | 'map' | 'catalog' | 'mission'>('all');
+  // Owner Space Edit Modal State
+  const [ownerEditingItem, setOwnerEditingItem] = useState<Establishment | null>(null);
+  const [isOwnerEditOpen, setIsOwnerEditOpen] = useState(false);
+
+  // Navigation & View tabs: 'all' (visão geral), 'map' (mapa), 'catalog' (catálogo), 'mission' (missão & valores), 'my-spaces' (espaços do responsável)
+  const [activeTab, setActiveTab] = useState<'all' | 'map' | 'catalog' | 'mission' | 'my-spaces'>('all');
   
   // Filters & Sorting
   const [searchQuery, setSearchQuery] = useState('');
@@ -625,6 +631,27 @@ export default function App() {
             establishments={establishments}
             onOpenVolunteerModal={() => setIsVolunteerModalOpen(true)}
           />
+        ) : activeTab === 'my-spaces' ? (
+          <MySpacesView
+            user={currentUser}
+            establishments={establishments}
+            onRequestAuth={() => setIsAuthModalOpen(true)}
+            onOpenRegister={() => {
+              setEditingItem(null);
+              setIsRegisterOpen(true);
+            }}
+            onOpenEdit={(item) => {
+              setOwnerEditingItem(item);
+              setIsOwnerEditOpen(true);
+            }}
+            onViewPublicPage={(item) => {
+              setActiveModalItem(item);
+            }}
+            onSuccessClaim={(updated) => {
+              setEstablishments(updated);
+            }}
+            onShowToast={showToast}
+          />
         ) : (
 
           <>
@@ -1006,6 +1033,34 @@ export default function App() {
         isVisited={activeModalItem ? userCheckIns.some((c) => c.establishmentId === activeModalItem.id) : false}
         isAdmin={isAdmin}
         userLocation={userLocation}
+        currentUser={currentUser}
+        onOpenOwnerEdit={(item) => {
+          setOwnerEditingItem(item);
+          setIsOwnerEditOpen(true);
+        }}
+        onNavigateToMySpaces={() => {
+          setActiveTab('my-spaces');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
+      {/* Owner Space Edit Modal (Edição restrita do espaço próprio com envio para aprovação da curadoria) */}
+      <OwnerEditModal
+        isOpen={isOwnerEditOpen}
+        onClose={() => {
+          setIsOwnerEditOpen(false);
+          setOwnerEditingItem(null);
+        }}
+        establishment={ownerEditingItem}
+        user={currentUser}
+        onSuccess={(updated) => {
+          setEstablishments(updated);
+          if (activeModalItem && ownerEditingItem && activeModalItem.id === ownerEditingItem.id) {
+            const fresh = updated.find((e) => e.id === ownerEditingItem.id);
+            if (fresh) setActiveModalItem(fresh);
+          }
+        }}
+        onShowToast={showToast}
       />
 
       {/* The Beloved Spacious Registration Form Modal */}
@@ -1040,11 +1095,12 @@ export default function App() {
         }}
       />
 
-      {/* Curator Panel Modal (Stories/Reviews Moderation, Companions & IP Ban Management) */}
+      {/* Curator Panel Modal (Stories/Reviews Moderation, Companions, Space Edits & IP Ban Management) */}
       <CuratorPanelModal
         isOpen={isCuratorPanelOpen}
         onClose={() => setIsCuratorPanelOpen(false)}
         establishments={establishments}
+        onUpdateEstablishments={(items) => setEstablishments(items)}
         onShowToast={showToast}
       />
 

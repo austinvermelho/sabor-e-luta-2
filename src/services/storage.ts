@@ -1,4 +1,4 @@
-import { Establishment, AdSenseConfig, ProjectSupportConfig, Volunteer } from '../types';
+import { Establishment, AdSenseConfig, ProjectSupportConfig, Volunteer, UserProfile } from '../types';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
@@ -398,4 +398,193 @@ export const subscribeToVolunteers = (
     return () => {};
   }
 };
+
+// ==========================================
+// Establishment Ownership & Edits Management
+// ==========================================
+
+export const claimEstablishmentAsync = async (
+  establishmentId: string,
+  user: UserProfile,
+  message?: string
+): Promise<Establishment[]> => {
+  let updatedItem: Establishment | null = null;
+
+  try {
+    const res = await fetch(`/api/establishments/${establishmentId}/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.uid,
+        userEmail: user.email,
+        userName: user.displayName,
+        message,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.item) {
+        updatedItem = data.item;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao reivindicar espaço no servidor:', err);
+  }
+
+  if (updatedItem) {
+    try {
+      const docRef = doc(ESTABLISHMENTS_COL, establishmentId);
+      await setDoc(docRef, sanitizeForFirestore(updatedItem), { merge: true });
+    } catch (err) {
+      console.warn('Erro ao atualizar reivindicação no Firestore:', err);
+    }
+  }
+
+  return await fetchEstablishmentsAsync();
+};
+
+export const submitEstablishmentEditAsync = async (
+  establishmentId: string,
+  user: UserProfile,
+  editData: Partial<Establishment>,
+  notes?: string
+): Promise<Establishment[]> => {
+  let updatedItem: Establishment | null = null;
+
+  try {
+    const res = await fetch(`/api/establishments/${establishmentId}/submit-edit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.uid,
+        userEmail: user.email,
+        editData,
+        notes,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.item) {
+        updatedItem = data.item;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao enviar edição do espaço no servidor:', err);
+  }
+
+  if (updatedItem) {
+    try {
+      const docRef = doc(ESTABLISHMENTS_COL, establishmentId);
+      await setDoc(docRef, sanitizeForFirestore(updatedItem), { merge: true });
+    } catch (err) {
+      console.warn('Erro ao persistir proposta de edição no Firestore:', err);
+    }
+  }
+
+  return await fetchEstablishmentsAsync();
+};
+
+export const approveEstablishmentEditAsync = async (establishmentId: string): Promise<Establishment[]> => {
+  let updatedItem: Establishment | null = null;
+
+  try {
+    const res = await fetch(`/api/curator/establishments/${establishmentId}/approve-edit`, {
+      method: 'PUT',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.item) {
+        updatedItem = data.item;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao aprovar edição no servidor:', err);
+  }
+
+  if (updatedItem) {
+    try {
+      const docRef = doc(ESTABLISHMENTS_COL, establishmentId);
+      await setDoc(docRef, sanitizeForFirestore(updatedItem), { merge: true });
+    } catch (err) {
+      console.warn('Erro ao sincronizar aprovação de edição no Firestore:', err);
+    }
+  }
+
+  return await fetchEstablishmentsAsync();
+};
+
+export const rejectEstablishmentEditAsync = async (
+  establishmentId: string,
+  reason?: string
+): Promise<Establishment[]> => {
+  let updatedItem: Establishment | null = null;
+
+  try {
+    const res = await fetch(`/api/curator/establishments/${establishmentId}/reject-edit`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.item) {
+        updatedItem = data.item;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao rejeitar edição no servidor:', err);
+  }
+
+  if (updatedItem) {
+    try {
+      const docRef = doc(ESTABLISHMENTS_COL, establishmentId);
+      await setDoc(docRef, sanitizeForFirestore(updatedItem), { merge: true });
+    } catch (err) {
+      console.warn('Erro ao sincronizar rejeição de edição no Firestore:', err);
+    }
+  }
+
+  return await fetchEstablishmentsAsync();
+};
+
+export const manageEstablishmentClaimAsync = async (
+  establishmentId: string,
+  action: 'approve' | 'reject' | 'revoke',
+  owner?: { uid?: string; email?: string; name?: string }
+): Promise<Establishment[]> => {
+  let updatedItem: Establishment | null = null;
+
+  try {
+    const res = await fetch(`/api/curator/establishments/${establishmentId}/manage-claim`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action,
+        ownerUid: owner?.uid,
+        ownerEmail: owner?.email,
+        ownerName: owner?.name,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.item) {
+        updatedItem = data.item;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao gerenciar reivindicação no servidor:', err);
+  }
+
+  if (updatedItem) {
+    try {
+      const docRef = doc(ESTABLISHMENTS_COL, establishmentId);
+      await setDoc(docRef, sanitizeForFirestore(updatedItem), { merge: true });
+    } catch (err) {
+      console.warn('Erro ao sincronizar gestão de posse no Firestore:', err);
+    }
+  }
+
+  return await fetchEstablishmentsAsync();
+};
+
 

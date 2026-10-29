@@ -22,7 +22,12 @@ import {
   Lock,
   Unlock,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Store,
+  UserCheck,
+  FileText,
+  ArrowRight,
+  UserMinus
 } from 'lucide-react';
 import { CheckIn, CuratorUser, BannedIpRecord, Establishment } from '../types';
 import { 
@@ -34,6 +39,11 @@ import {
   banIpAsync, 
   unbanIpAsync 
 } from '../services/passport';
+import { 
+  approveEstablishmentEditAsync, 
+  rejectEstablishmentEditAsync, 
+  manageEstablishmentClaimAsync 
+} from '../services/storage';
 import { containsInappropriateContent } from '../utils/moderation';
 import { ImageLightbox } from './ImageLightbox';
 
@@ -41,6 +51,7 @@ interface CuratorPanelModalProps {
   isOpen: boolean;
   onClose: () => void;
   establishments?: Establishment[];
+  onUpdateEstablishments?: (items: Establishment[]) => void;
   onShowToast?: (msg: string) => void;
 }
 
@@ -48,9 +59,10 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
   isOpen,
   onClose,
   establishments = [],
+  onUpdateEstablishments,
   onShowToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'relatos' | 'users' | 'banned'>('relatos');
+  const [activeTab, setActiveTab] = useState<'relatos' | 'users' | 'banned' | 'edits'>('relatos');
   
   // Data states
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
@@ -212,6 +224,114 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
     }
   };
 
+  // Space edits & claims counts
+  const pendingSpaceEdits = useMemo(
+    () => establishments.filter((e) => !!e.pendingEdit),
+    [establishments]
+  );
+
+  const pendingSpaceClaims = useMemo(
+    () => establishments.filter((e) => e.claimStatus === 'pending'),
+    [establishments]
+  );
+
+  const totalPendingSpaceActions = pendingSpaceEdits.length + pendingSpaceClaims.length;
+
+  // Space edits approval & claim handlers
+  const handleApproveSpaceEdit = async (establishmentId: string) => {
+    try {
+      const updated = await approveEstablishmentEditAsync(establishmentId);
+      onUpdateEstablishments?.(updated);
+      onShowToast?.('Edição do espaço aprovada e publicada no catálogo!');
+    } catch {
+      onShowToast?.('Falha ao aprovar edição.');
+    }
+  };
+
+  const handleRejectSpaceEdit = async (establishmentId: string) => {
+    if (!window.confirm('Deseja recusar esta proposta de alteração?')) return;
+    try {
+      const updated = await rejectEstablishmentEditAsync(establishmentId);
+      onUpdateEstablishments?.(updated);
+      onShowToast?.('Proposta de edição rejeitada.');
+    } catch {
+      onShowToast?.('Falha ao recusar edição.');
+    }
+  };
+
+  const handleApproveClaim = async (est: Establishment) => {
+    try {
+      const updated = await manageEstablishmentClaimAsync(est.id, 'approve', {
+        uid: est.ownerUid,
+        email: est.ownerEmail,
+        name: est.ownerName,
+      });
+      onUpdateEstablishments?.(updated);
+      onShowToast?.(`Posse do espaço "${est.name}" atribuída a ${est.ownerEmail || est.ownerName}!`);
+    } catch {
+      onShowToast?.('Falha ao aprovar posse.');
+    }
+  };
+
+  const handleRejectClaim = async (establishmentId: string) => {
+    if (!window.confirm('Deseja recusar esta solicitação de posse?')) return;
+    try {
+      const updated = await manageEstablishmentClaimAsync(establishmentId, 'reject');
+      onUpdateEstablishments?.(updated);
+      onShowToast?.('Reivindicação de posse recusada.');
+    } catch {
+      onShowToast?.('Falha ao recusar posse.');
+    }
+  };
+
+  const handleRevokeOwner = async (establishmentId: string) => {
+    if (!window.confirm('Tem certeza que deseja desvincular o responsável deste espaço?')) return;
+    try {
+      const updated = await manageEstablishmentClaimAsync(establishmentId, 'revoke');
+      onUpdateEstablishments?.(updated);
+      onShowToast?.('Vínculo de responsável desfeito.');
+    } catch {
+      onShowToast?.('Falha ao desvincular.');
+    }
+  };
+
+  // Direct assignment form
+  const [assignSearch, setAssignSearch] = useState('');
+  const [assignSelectedEst, setAssignSelectedEst] = useState<Establishment | null>(null);
+  const [assignEmail, setAssignEmail] = useState('');
+  const [assignName, setAssignName] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const handleDirectAssignSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignSelectedEst || !assignEmail.trim()) return;
+    setIsAssigning(true);
+    try {
+      const updated = await manageEstablishmentClaimAsync(assignSelectedEst.id, 'approve', {
+        email: assignEmail.trim(),
+        name: assignName.trim() || assignEmail.split('@')[0],
+      });
+      onUpdateEstablishments?.(updated);
+      onShowToast?.(`Responsável ${assignEmail.trim()} vinculado a "${assignSelectedEst.name}"!`);
+      setAssignSelectedEst(null);
+      setAssignEmail('');
+      setAssignName('');
+    } catch {
+      onShowToast?.('Erro ao vincular responsável.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // Filter for direct assign search
+  const assignEstablishmentsFiltered = useMemo(() => {
+    if (!assignSearch.trim()) return establishments.slice(0, 10);
+    const q = assignSearch.toLowerCase().trim();
+    return establishments.filter(
+      (e) => e.name.toLowerCase().includes(q) || e.city.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [establishments, assignSearch]);
+
   // Counts
   const pendingCheckInsCount = useMemo(
     () => checkIns.filter((c) => c.status === 'pending').length,
@@ -367,6 +487,23 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
               >
                 <Ban className="w-3.5 h-3.5 text-rose-500" />
                 <span>IPs Bloqueados ({bannedIps.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('edits')}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'edits'
+                    ? 'bg-neutral-900 text-white shadow-xs'
+                    : 'bg-white/80 text-stone-700 hover:bg-white'
+                }`}
+              >
+                <Store className="w-3.5 h-3.5 text-amber-400" />
+                <span>Gestão de Espaços</span>
+                {totalPendingSpaceActions > 0 && (
+                  <span className="bg-amber-400 text-neutral-950 font-black text-[10px] px-1.5 py-0.2 rounded-full">
+                    {totalPendingSpaceActions}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -921,6 +1058,355 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
                     </table>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB 4: GESTÃO DE ESPAÇOS E EDIÇÕES */}
+            {activeTab === 'edits' && (
+              <div className="space-y-6">
+                
+                {/* 1. Pending Edits Queue */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-serif text-base font-bold text-neutral-900 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600" />
+                      <span>Edições Propostas por Responsáveis ({pendingSpaceEdits.length})</span>
+                    </h4>
+                    <span className="text-xs text-stone-500">
+                      Revise antes de publicar no mapa e catálogo
+                    </span>
+                  </div>
+
+                  {pendingSpaceEdits.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-stone-200 p-6 text-center text-xs text-stone-500">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1.5" />
+                      Não há nenhuma proposta de edição pendente no momento.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pendingSpaceEdits.map((est) => {
+                        const edit = est.pendingEdit!;
+                        return (
+                          <div
+                            key={est.id}
+                            className="bg-white rounded-xl border-2 border-amber-300 p-5 space-y-4 shadow-sm"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-stone-100 pb-3">
+                              <div>
+                                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block">
+                                  Proposta de Atualização
+                                </span>
+                                <h5 className="font-serif text-base font-bold text-stone-900">
+                                  {est.name}
+                                </h5>
+                                <p className="text-xs text-stone-500">
+                                  Enviada por <strong>{edit.submittedByEmail || edit.submittedByUid}</strong> em{' '}
+                                  {new Date(edit.submittedAt).toLocaleString('pt-BR')}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectSpaceEdit(est.id)}
+                                  className="px-3 py-1.5 bg-stone-100 hover:bg-rose-100 text-stone-700 hover:text-rose-900 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                                >
+                                  Recusar Edição
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveSpaceEdit(est.id)}
+                                  className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Aprovar e Publicar</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Owner notes if present */}
+                            {edit.notes && (
+                              <div className="p-3 bg-amber-50 rounded-lg text-xs text-amber-900 border border-amber-200">
+                                <strong>Nota do Responsável:</strong> "{edit.notes}"
+                              </div>
+                            )}
+
+                            {/* Comparison Diff Table */}
+                            <div className="border border-stone-200 rounded-lg overflow-hidden text-xs">
+                              <table className="w-full text-left">
+                                <thead className="bg-[#fbf8f3] border-b border-stone-200 text-[11px] font-bold text-stone-600 uppercase">
+                                  <tr>
+                                    <th className="py-2 px-3 w-1/4">Campo</th>
+                                    <th className="py-2 px-3 w-3/8 text-stone-500">Versão Publicada Atual</th>
+                                    <th className="py-2 px-3 w-3/8 text-emerald-900">Nova Proposta</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                  {edit.name && edit.name !== est.name && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">Nome</td>
+                                      <td className="py-2 px-3 text-stone-500 line-through">{est.name}</td>
+                                      <td className="py-2 px-3 font-bold text-emerald-800">{edit.name}</td>
+                                    </tr>
+                                  )}
+                                  {edit.description && edit.description !== est.description && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">Descrição</td>
+                                      <td className="py-2 px-3 text-stone-500 text-[11px]">{est.description}</td>
+                                      <td className="py-2 px-3 font-medium text-emerald-900 text-[11px]">{edit.description}</td>
+                                    </tr>
+                                  )}
+                                  {edit.address && edit.address !== est.address && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">Endereço</td>
+                                      <td className="py-2 px-3 text-stone-500">{est.address} ({est.city}/{est.state})</td>
+                                      <td className="py-2 px-3 font-bold text-emerald-800">{edit.address} ({edit.city || est.city}/{edit.state || est.state})</td>
+                                    </tr>
+                                  )}
+                                  {edit.instagram !== undefined && edit.instagram !== est.instagram && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">Instagram</td>
+                                      <td className="py-2 px-3 text-stone-500">{est.instagram || '-'}</td>
+                                      <td className="py-2 px-3 font-bold text-emerald-800">{edit.instagram || '-'}</td>
+                                    </tr>
+                                  )}
+                                  {edit.whatsapp !== undefined && edit.whatsapp !== est.whatsapp && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">WhatsApp</td>
+                                      <td className="py-2 px-3 text-stone-500">{est.whatsapp || '-'}</td>
+                                      <td className="py-2 px-3 font-bold text-emerald-800">{edit.whatsapp || '-'}</td>
+                                    </tr>
+                                  )}
+                                  {edit.operatingHours && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">Horários</td>
+                                      <td className="py-2 px-3 text-stone-500">Horários vigentes</td>
+                                      <td className="py-2 px-3 text-emerald-900 font-medium">Novos horários propostos anexados</td>
+                                    </tr>
+                                  )}
+                                  {edit.imageUrl && edit.imageUrl !== est.imageUrl && (
+                                    <tr className="bg-amber-50/50">
+                                      <td className="py-2 px-3 font-semibold text-stone-700">Foto de Capa</td>
+                                      <td className="py-2 px-3 text-stone-500">Foto atual</td>
+                                      <td className="py-2 px-3">
+                                        <img src={edit.imageUrl} alt="Nova foto" className="w-16 h-12 object-cover rounded border" />
+                                      </td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Pending Claims Queue */}
+                <div className="space-y-3 pt-4 border-t border-stone-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-serif text-base font-bold text-neutral-900 flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-red-900" />
+                      <span>Reivindicações de Posse Pendentes ({pendingSpaceClaims.length})</span>
+                    </h4>
+                    <span className="text-xs text-stone-500">
+                      Usuários que solicitaram gerenciar um estabelecimento
+                    </span>
+                  </div>
+
+                  {pendingSpaceClaims.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-stone-200 p-6 text-center text-xs text-stone-500">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1.5" />
+                      Não há solicitações de posse pendentes.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {pendingSpaceClaims.map((est) => (
+                        <div
+                          key={est.id}
+                          className="bg-white rounded-xl border-2 border-red-200 p-4 space-y-3"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <h5 className="font-serif text-base font-bold text-stone-900">
+                                {est.name}
+                              </h5>
+                              <p className="text-xs text-stone-500">
+                                {est.address} — {est.city}/{est.state}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleRejectClaim(est.id)}
+                                className="px-3 py-1.5 bg-stone-100 hover:bg-rose-100 text-stone-700 hover:text-rose-900 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                              >
+                                Recusar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApproveClaim(est)}
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-red-900 hover:bg-red-950 text-white text-xs font-bold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Aprovar Posse</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="bg-stone-50 p-3 rounded-lg border border-stone-200 text-xs space-y-1">
+                            <div>
+                              <span className="font-bold text-stone-800">Solicitante:</span>{' '}
+                              {est.ownerName || 'Companheiro'} ({est.ownerEmail || 'sem email'})
+                            </div>
+                            {est.claimedAt && (
+                              <div className="text-stone-500 text-[11px]">
+                                Solicitado em {new Date(est.claimedAt).toLocaleString('pt-BR')}
+                              </div>
+                            )}
+                            {est.claimMessage && (
+                              <div className="pt-1 text-stone-700 italic">
+                                "{est.claimMessage}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Direct Owner Assignment */}
+                <div className="space-y-3 pt-4 border-t border-stone-200">
+                  <h4 className="font-serif text-base font-bold text-neutral-900 flex items-center gap-2">
+                    <Store className="w-4 h-4 text-red-900" />
+                    <span>Atribuição Direta de Responsável (Curadoria)</span>
+                  </h4>
+
+                  <form onSubmit={handleDirectAssignSubmit} className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-stone-700 mb-1">
+                          1. Buscar Espaço:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Nome ou cidade..."
+                          value={assignSearch}
+                          onChange={(e) => setAssignSearch(e.target.value)}
+                          className="w-full text-xs p-2 bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-900"
+                        />
+                        <div className="mt-1.5 max-h-28 overflow-y-auto border border-stone-200 rounded-lg divide-y divide-stone-100 bg-white">
+                          {assignEstablishmentsFiltered.map((e) => (
+                            <div
+                              key={e.id}
+                              onClick={() => setAssignSelectedEst(e)}
+                              className={`p-1.5 text-[11px] cursor-pointer ${
+                                assignSelectedEst?.id === e.id
+                                  ? 'bg-red-50 text-red-900 font-bold'
+                                  : 'hover:bg-stone-50 text-stone-700'
+                              }`}
+                            >
+                              {e.name} ({e.city}/{e.state})
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-stone-700 mb-1">
+                          2. E-mail do Responsável:
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="responsavel@espaco.com"
+                          value={assignEmail}
+                          onChange={(e) => setAssignEmail(e.target.value)}
+                          required
+                          className="w-full text-xs p-2 bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-900"
+                        />
+                        <label className="block text-xs font-bold text-stone-700 mt-2 mb-1">
+                          Nome do Responsável:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Nome / Coletivo"
+                          value={assignName}
+                          onChange={(e) => setAssignName(e.target.value)}
+                          className="w-full text-xs p-2 bg-stone-50 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-900"
+                        />
+                      </div>
+
+                      <div className="flex flex-col justify-end">
+                        <button
+                          type="submit"
+                          disabled={isAssigning || !assignSelectedEst || !assignEmail.trim()}
+                          className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-950 text-white text-xs font-bold rounded-lg shadow-sm disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          {isAssigning ? 'Vinculando...' : 'Vincular Responsável'}
+                        </button>
+                        {assignSelectedEst && (
+                          <div className="text-[11px] text-stone-600 mt-2">
+                            Espaço: <strong>{assignSelectedEst.name}</strong>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                {/* 4. Active Owners List */}
+                <div className="space-y-3 pt-4 border-t border-stone-200">
+                  <h4 className="font-serif text-base font-bold text-neutral-900 flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-emerald-700" />
+                    <span>Espaços com Responsável Atribuído</span>
+                  </h4>
+
+                  <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-stone-700">
+                        <thead className="bg-[#fbf8f3] border-b border-stone-200 text-[11px] font-bold text-stone-600 uppercase">
+                          <tr>
+                            <th className="py-2.5 px-3">Estabelecimento</th>
+                            <th className="py-2.5 px-3">Responsável</th>
+                            <th className="py-2.5 px-3">E-mail Cadastrado</th>
+                            <th className="py-2.5 px-3">Status</th>
+                            <th className="py-2.5 px-3 text-right">Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {establishments
+                            .filter((e) => e.claimStatus === 'approved' || (e.ownerEmail && e.claimStatus !== 'pending'))
+                            .map((e) => (
+                              <tr key={e.id} className="hover:bg-stone-50">
+                                <td className="py-2 px-3 font-bold text-stone-900">{e.name}</td>
+                                <td className="py-2 px-3">{e.ownerName || 'Companheiro'}</td>
+                                <td className="py-2 px-3 font-mono text-[11px]">{e.ownerEmail || e.ownerUid}</td>
+                                <td className="py-2 px-3">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                    Ativo
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRevokeOwner(e.id)}
+                                    className="text-stone-400 hover:text-rose-700 p-1 rounded"
+                                    title="Desvincular responsável"
+                                  >
+                                    <UserMinus className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             )}
           </div>

@@ -31,6 +31,36 @@ export interface Establishment {
   createdAt: string;
   updatedAt?: string;
   updatedBy?: string;
+  // Owner and claiming fields
+  ownerUid?: string;
+  ownerEmail?: string;
+  ownerName?: string;
+  claimStatus?: 'none' | 'pending' | 'approved';
+  claimMessage?: string;
+  claimedAt?: string;
+  pendingEdit?: EstablishmentPendingEdit;
+}
+
+export interface EstablishmentPendingEdit {
+  submittedAt: string;
+  submittedByUid: string;
+  submittedByEmail?: string;
+  name?: string;
+  category?: CategoryType;
+  tags?: string[];
+  city?: string;
+  state?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  description?: string;
+  instagram?: string;
+  whatsapp?: string;
+  website?: string;
+  imageUrl?: string;
+  history?: string;
+  operatingHours?: OperatingHours;
+  notes?: string;
 }
 
 export interface DaySchedule {

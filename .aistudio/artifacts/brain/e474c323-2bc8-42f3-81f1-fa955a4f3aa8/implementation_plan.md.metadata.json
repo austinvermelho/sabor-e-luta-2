@@ -1,6 +1,6 @@
 {
-  "summary":  "Plan for implementing Passaporte Sabor & Luta with email/password authentication, check-in log history with virtual stamps, and physical booklet UI presentation.",
-  "updatedAt":  "2026-10-28T23:38:10.411461738Z",
+  "summary":  "Plano de implementação para o sistema de atribuição de usuários como responsáveis de estabelecimentos, aba 'Meus Espaços' no menu principal, controle de acesso restrito (sem poder sobre os comentários do passaporte) e fluxo de re-aprovação de edições pela curadoria.",
+  "updatedAt":  "2026-10-29T23:04:53.467201924Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

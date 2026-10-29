@@ -299,6 +299,149 @@ app.delete('/api/establishments/:id', (req, res) => {
   res.json({ success: true, items: filtered });
 });
 
+// Owner Claim & Edit Endpoints
+app.post('/api/establishments/:id/claim', (req, res) => {
+  const { id } = req.params;
+  const { userId, userEmail, userName, message } = req.body || {};
+
+  if (!userId || !userEmail) {
+    return res.status(400).json({ error: 'Usuário e e-mail são obrigatórios para reivindicar o espaço.' });
+  }
+
+  const current = readEstablishmentsData();
+  const index = current.findIndex((e) => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+  }
+
+  current[index].ownerUid = userId;
+  current[index].ownerEmail = userEmail;
+  current[index].ownerName = userName || userEmail.split('@')[0];
+  current[index].claimStatus = 'pending';
+  current[index].claimMessage = message || '';
+  current[index].claimedAt = new Date().toISOString();
+
+  writeEstablishmentsData(current);
+  res.json({ success: true, item: current[index], items: current });
+});
+
+app.post('/api/establishments/:id/submit-edit', (req, res) => {
+  const { id } = req.params;
+  const { userId, userEmail, editData, notes } = req.body || {};
+
+  if (!userId || !editData) {
+    return res.status(400).json({ error: 'Dados da edição ou identificador do usuário ausentes.' });
+  }
+
+  const current = readEstablishmentsData();
+  const index = current.findIndex((e) => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+  }
+
+  const item = current[index];
+  // Verify ownership permission
+  if (item.ownerUid !== userId && item.ownerEmail !== userEmail) {
+    return res.status(403).json({ error: 'Você não tem permissão para editar este estabelecimento.' });
+  }
+
+  // Create pending edit proposal (never overwrites published version directly)
+  item.pendingEdit = {
+    ...editData,
+    submittedAt: new Date().toISOString(),
+    submittedByUid: userId,
+    submittedByEmail: userEmail || item.ownerEmail,
+    notes: notes || '',
+  };
+  item.updatedAt = new Date().toISOString();
+
+  writeEstablishmentsData(current);
+  res.json({ success: true, item, items: current });
+});
+
+// Curator Review & Approval of Space Edits
+app.get('/api/curator/pending-edits', (req, res) => {
+  const current = readEstablishmentsData();
+  const pendingEdits = current.filter((e) => e.pendingEdit || e.claimStatus === 'pending');
+  res.json(pendingEdits);
+});
+
+app.put('/api/curator/establishments/:id/approve-edit', (req, res) => {
+  const { id } = req.params;
+  const current = readEstablishmentsData();
+  const index = current.findIndex((e) => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+  }
+
+  const item = current[index];
+  if (!item.pendingEdit) {
+    return res.status(400).json({ error: 'Não há edição pendente para aprovação neste espaço.' });
+  }
+
+  const { submittedAt, submittedByUid, submittedByEmail, notes, ...fieldsToApply } = item.pendingEdit;
+
+  // Apply changes to live establishment
+  current[index] = {
+    ...item,
+    ...fieldsToApply,
+    updatedAt: new Date().toISOString(),
+    updatedBy: `Owner: ${submittedByEmail || submittedByUid}`,
+    pendingEdit: undefined,
+  };
+
+  writeEstablishmentsData(current);
+  res.json({ success: true, item: current[index], items: current });
+});
+
+app.put('/api/curator/establishments/:id/reject-edit', (req, res) => {
+  const { id } = req.params;
+  const current = readEstablishmentsData();
+  const index = current.findIndex((e) => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+  }
+
+  current[index].pendingEdit = undefined;
+  current[index].updatedAt = new Date().toISOString();
+
+  writeEstablishmentsData(current);
+  res.json({ success: true, item: current[index], items: current });
+});
+
+app.put('/api/curator/establishments/:id/manage-claim', (req, res) => {
+  const { id } = req.params;
+  const { action, ownerUid, ownerEmail, ownerName } = req.body || {};
+
+  const current = readEstablishmentsData();
+  const index = current.findIndex((e) => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Estabelecimento não encontrado.' });
+  }
+
+  if (action === 'approve') {
+    current[index].claimStatus = 'approved';
+    if (ownerUid) current[index].ownerUid = ownerUid;
+    if (ownerEmail) current[index].ownerEmail = ownerEmail;
+    if (ownerName) current[index].ownerName = ownerName;
+  } else if (action === 'revoke' || action === 'reject') {
+    current[index].claimStatus = 'none';
+    current[index].ownerUid = undefined;
+    current[index].ownerEmail = undefined;
+    current[index].ownerName = undefined;
+    current[index].claimMessage = undefined;
+  }
+
+  current[index].updatedAt = new Date().toISOString();
+  writeEstablishmentsData(current);
+  res.json({ success: true, item: current[index], items: current });
+});
+
 // Volunteers Persistence and API Routes
 const VOLUNTEERS_FILE = path.join(__dirname, 'data', 'volunteers.json');
 

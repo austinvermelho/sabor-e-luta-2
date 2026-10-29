@@ -11,13 +11,14 @@ import {
   HandHeart,
   Users,
   Stamp,
-  MessageSquare
+  MessageSquare,
+  Store
 } from 'lucide-react';
 
 interface HeaderProps {
   onOpenRegister: () => void;
-  activeTab: 'all' | 'map' | 'catalog' | 'mission';
-  setActiveTab: (tab: 'all' | 'map' | 'catalog' | 'mission') => void;
+  activeTab: 'all' | 'map' | 'catalog' | 'mission' | 'my-spaces';
+  setActiveTab: (tab: 'all' | 'map' | 'catalog' | 'mission' | 'my-spaces') => void;
   count: number;
   isAdmin?: boolean;
   pendingCount?: number;
@@ -54,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleTabClick = (tab: 'all' | 'map' | 'catalog' | 'mission') => {
+  const handleTabClick = (tab: 'all' | 'map' | 'catalog' | 'mission' | 'my-spaces') => {
     setActiveTab(tab);
     setMobileMenuOpen(false);
   };
@@ -198,6 +199,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Missão
             </button>
+            <button
+              onClick={() => handleTabClick('my-spaces')}
+              aria-current={activeTab === 'my-spaces' ? 'page' : undefined}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
+                activeTab === 'my-spaces'
+                  ? 'bg-white text-[#141210] shadow-xs border border-[#e4dcce]'
+                  : 'text-[#141210] hover:text-[#b91c1c] hover:bg-white/60'
+              }`}
+            >
+              Meus Espaços
+            </button>
           </nav>
 
           {/* Right Actions: Passaporte + Volunteer CTA + Register Button + Mobile Menu Toggle */}
@@ -304,6 +316,17 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Missão
+          </button>
+          <button
+            onClick={() => handleTabClick('my-spaces')}
+            aria-current={activeTab === 'my-spaces' ? 'page' : undefined}
+            className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap transition-all border shrink-0 focus-visible:ring-2 focus-visible:ring-[#b91c1c] ${
+              activeTab === 'my-spaces'
+                ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-xs'
+                : 'bg-[#f3ede2] text-[#141210] border-[#e4dcce]'
+            }`}
+          >
+            Meus Espaços
           </button>
         </div>
 
@@ -433,6 +456,18 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 )
               )}
+
+              {/* My Spaces Shortcut */}
+              <button
+                onClick={() => handleTabClick('my-spaces')}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/60 text-xs font-semibold text-stone-900 hover:bg-amber-100/70 transition-colors text-left focus-visible:ring-2 focus-visible:ring-red-900 cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Store className="w-4 h-4 text-red-900 shrink-0" aria-hidden="true" />
+                  <span>Meus Espaços Cadastrados</span>
+                </div>
+                <span className="text-[11px] text-red-900 font-bold">Gerenciar &rarr;</span>
+              </button>
 
               {/* Quick Mission Shortcut */}
               <button

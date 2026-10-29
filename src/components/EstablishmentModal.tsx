@@ -18,7 +18,7 @@ import {
   UserCheck,
   Stamp
 } from 'lucide-react';
-import { Establishment, OperatingHours, CheckIn } from '../types';
+import { Establishment, OperatingHours, CheckIn, UserProfile } from '../types';
 import { CATEGORIES } from '../utils/categories';
 import { formatOperatingHoursPT, getOpeningStatusPT, formatDatePT } from '../utils/hours';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
@@ -38,6 +38,9 @@ interface EstablishmentModalProps {
   isVisited?: boolean;
   isAdmin?: boolean;
   userLocation?: { lat: number; lng: number } | null;
+  currentUser?: UserProfile | null;
+  onOpenOwnerEdit?: (item: Establishment) => void;
+  onNavigateToMySpaces?: () => void;
 }
 
 export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
@@ -50,6 +53,9 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
   isVisited = false,
   isAdmin = false,
   userLocation,
+  currentUser,
+  onOpenOwnerEdit,
+  onNavigateToMySpaces,
 }) => {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -438,7 +444,45 @@ export const EstablishmentModal: React.FC<EstablishmentModalProps> = ({
             </div>
           </div>
 
-
+          {/* Responsible Owner Status & Action */}
+          {establishment.claimStatus === 'approved' ? (
+            <div className="pt-3 border-t border-[#e4dcce] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-emerald-50/70 p-3 rounded-xl border border-emerald-200">
+              <div className="flex items-center gap-2 text-xs text-emerald-950">
+                <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  Espaço com <strong>responsável verificado</strong>{establishment.ownerName ? `: ${establishment.ownerName}` : ''}
+                </span>
+              </div>
+              {currentUser && (currentUser.uid === establishment.ownerUid || currentUser.email === establishment.ownerEmail) && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenOwnerEdit?.(establishment);
+                  }}
+                  className="text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5 shadow-2xs self-start sm:self-auto cursor-pointer"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Editar Meu Espaço</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="pt-3 border-t border-[#e4dcce] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-[#fbf8f3] p-3 rounded-xl border border-[#e4dcce]">
+              <div className="text-xs text-[#57534e]">
+                <span>Você é responsável por este espaço? </span>
+                <span className="text-[#141210] font-medium">Reivindique a gestão e mantenha as informações atualizadas.</span>
+              </div>
+              <button
+                onClick={() => {
+                  onClose();
+                  onNavigateToMySpaces?.();
+                }}
+                className="text-xs font-bold text-[#b91c1c] hover:text-[#991b1b] underline underline-offset-2 shrink-0 cursor-pointer"
+              >
+                Gerenciar em Meus Espaços →
+              </button>
+            </div>
+          )}
 
           {/* Edit / Remove Management (VISIBLE ONLY FOR ADMIN/CURATORS) */}
           {isAdmin && (
