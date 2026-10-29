@@ -149,12 +149,14 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
         id: `checkin_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         userId: user.uid,
         userEmail: user.email || undefined,
+        authorName: user.displayName || user.email?.split('@')[0] || 'Companheiro(a)',
         establishmentId: establishment.id,
         visitDate,
         experienceNote: experienceNote.trim(),
         photoUrl: photoUrls[0] || undefined,
         photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
         createdAt: new Date().toISOString(),
+        status: 'pending',
       };
 
       const checkIns = await saveCheckInAsync(newCheckIn);

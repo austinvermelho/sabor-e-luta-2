@@ -10,7 +10,8 @@ import {
   Lock,
   HandHeart,
   Users,
-  Stamp
+  Stamp,
+  MessageSquare
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -28,6 +29,8 @@ interface HeaderProps {
   pendingVolunteerCount?: number;
   onOpenPassport?: () => void;
   passportStampCount?: number;
+  onOpenCuratorPanel?: () => void;
+  pendingRelatosCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -45,6 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
   pendingVolunteerCount = 0,
   onOpenPassport,
   passportStampCount = 0,
+  onOpenCuratorPanel,
+  pendingRelatosCount = 0,
 }) => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,7 +71,23 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="font-semibold text-[11px] sm:text-xs">Modo Curadoria Ativo</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {onOpenCuratorPanel && (
+                <button
+                  onClick={onOpenCuratorPanel}
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-amber-300 cursor-pointer ${
+                    pendingRelatosCount > 0
+                      ? 'bg-amber-400 text-neutral-950 animate-pulse font-extrabold'
+                      : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700'
+                  }`}
+                >
+                  <MessageSquare className="w-3 h-3 text-amber-300" aria-hidden="true" />
+                  <span>
+                    Painel da Curadoria {pendingRelatosCount > 0 ? `(${pendingRelatosCount} relatos)` : ''}
+                  </span>
+                </button>
+              )}
+
               {onOpenPending && (
                 <button
                   onClick={onOpenPending}
@@ -78,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <Clock className="w-3 h-3" aria-hidden="true" />
                   <span>
-                    {pendingCount > 0 ? `${pendingCount} Espaços Pendentes` : 'Moderação (0)'}
+                    {pendingCount > 0 ? `${pendingCount} Espaços` : 'Espaços (0)'}
                   </span>
                 </button>
               )}
@@ -358,6 +379,25 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     )}
                   </div>
+                  {onOpenCuratorPanel && (
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenCuratorPanel();
+                      }}
+                      className="w-full flex items-center justify-between bg-amber-400 hover:bg-amber-300 text-xs font-bold py-2 px-3 rounded-lg text-neutral-950 transition-colors focus-visible:ring-2 focus-visible:ring-amber-300"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+                        Painel da Curadoria
+                      </span>
+                      {pendingRelatosCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-neutral-950 text-amber-300 font-bold text-[10px]">
+                          {pendingRelatosCount} pendentes
+                        </span>
+                      )}
+                    </button>
+                  )}
                   {onOpenPending && (
                     <button
                       onClick={() => {
@@ -368,7 +408,7 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                       <span className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                        Aprovações Pendentes
+                        Espaços Pendentes
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-amber-400 text-neutral-950 font-bold text-[10px]">
                         {pendingCount}

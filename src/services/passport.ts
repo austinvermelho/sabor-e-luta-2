@@ -11,14 +11,16 @@ import {
   getDocs, 
   doc, 
   setDoc, 
+  updateDoc,
   deleteDoc, 
   onSnapshot, 
   query, 
   where 
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { CheckIn, UserProfile } from '../types';
+import { CheckIn, UserProfile, CuratorUser, BannedIpRecord } from '../types';
 import { sanitizeForFirestore } from './storage';
+import { containsInappropriateContent, isPhotoSuspicious } from '../utils/moderation';
 
 const CHECKINS_COL = collection(db, 'checkins');
 const LOCAL_USER_KEY = 'sabor_luta_local_user';
@@ -50,7 +52,7 @@ export const mapFirebaseUser = (user: User | null): UserProfile | null => {
   return {
     uid: user.uid,
     email: user.email,
-    displayName: user.displayName || user.email?.split('@')[0] || 'Passaporeiro(a)'
+    displayName: user.displayName || user.email?.split('@')[0] || 'Companheiro(a)'
   };
 };
 
@@ -91,7 +93,7 @@ export const registerWithEmail = async (
     const fallbackProfile: UserProfile = {
       uid: `local_user_${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
       email,
-      displayName: name || email.split('@')[0] || 'Passaporeiro(a)'
+      displayName: name || email.split('@')[0] || 'Companheiro(a)'
     };
     setLocalUser(fallbackProfile);
     return fallbackProfile;
@@ -117,7 +119,7 @@ export const loginWithEmail = async (
     const fallbackProfile: UserProfile = {
       uid: `local_user_${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
       email,
-      displayName: email.split('@')[0] || 'Passaporeiro(a)'
+      displayName: email.split('@')[0] || 'Companheiro(a)'
     };
     setLocalUser(fallbackProfile);
     return fallbackProfile;
@@ -141,7 +143,7 @@ export const fetchEstablishmentCheckInsAsync = async (establishmentId: string): 
     const snapshot = await getDocs(q);
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data() as CheckIn;
-      if (data && data.id) {
+      if (data && data.id && (data.status === 'approved' || !data.status)) {
         itemsMap.set(data.id, data);
       }
     }
@@ -155,7 +157,7 @@ export const fetchEstablishmentCheckInsAsync = async (establishmentId: string): 
       const serverItems = await res.json();
       if (Array.isArray(serverItems)) {
         for (const cItem of serverItems) {
-          if (cItem && cItem.id && cItem.establishmentId === establishmentId) {
+          if (cItem && cItem.id && cItem.establishmentId === establishmentId && (cItem.status === 'approved' || !cItem.status)) {
             if (!itemsMap.has(cItem.id)) {
               itemsMap.set(cItem.id, cItem);
             }
@@ -219,7 +221,12 @@ export const fetchUserCheckInsAsync = async (userId: string): Promise<CheckIn[]>
 };
 
 export const saveCheckInAsync = async (checkIn: CheckIn): Promise<CheckIn[]> => {
-  const sanitized = sanitizeForFirestore(checkIn);
+  const isSuspicious = containsInappropriateContent(checkIn.experienceNote) || isPhotoSuspicious(checkIn.photoUrls);
+  const checkInWithStatus = {
+    ...checkIn,
+    status: (isSuspicious ? 'pending' : 'approved') as 'pending' | 'approved' | 'rejected'
+  };
+  const sanitized = sanitizeForFirestore(checkInWithStatus);
 
   // Firestore write
   try {
@@ -291,3 +298,193 @@ export const subscribeToUserCheckIns = (
     return () => {};
   }
 };
+
+// ==========================================
+// Curator & Moderation Services
+// ==========================================
+
+export const recordUserHeartbeat = async (user: UserProfile): Promise<void> => {
+  try {
+    await fetch('/api/users/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+      }),
+    });
+  } catch {
+    // Silent
+  }
+};
+
+export const fetchAllCheckInsForCuratorAsync = async (): Promise<CheckIn[]> => {
+  const checkinsMap = new Map<string, CheckIn>();
+
+  // 1. Fetch from server endpoint (includes enriched establishment names)
+  try {
+    const res = await fetch('/api/curator/checkins');
+    if (res.ok) {
+      const serverItems = await res.json();
+      if (Array.isArray(serverItems)) {
+        for (const item of serverItems) {
+          if (item && item.id) {
+            checkinsMap.set(item.id, item);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao buscar checkins do servidor para curadoria:', err);
+  }
+
+  // 2. Fetch from Firestore for any recent docs
+  try {
+    const snapshot = await getDocs(CHECKINS_COL);
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data() as CheckIn;
+      if (data && data.id) {
+        if (!checkinsMap.has(data.id)) {
+          checkinsMap.set(data.id, data);
+        } else {
+          // Merge status
+          const existing = checkinsMap.get(data.id)!;
+          checkinsMap.set(data.id, {
+            ...existing,
+            ...data,
+            // Keep establishmentName from server if present
+            establishmentName: (existing as any).establishmentName || (data as any).establishmentName,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao consultar Firestore para curadoria:', err);
+  }
+
+  return Array.from(checkinsMap.values()).sort(
+    (a, b) => new Date(b.createdAt || b.visitDate).getTime() - new Date(a.createdAt || a.visitDate).getTime()
+  );
+};
+
+export const moderateCheckInStatusAsync = async (
+  checkInId: string,
+  status: 'approved' | 'rejected'
+): Promise<boolean> => {
+  let success = false;
+
+  // 1. Update in Firestore
+  try {
+    const docRef = doc(CHECKINS_COL, checkInId);
+    await updateDoc(docRef, { status, moderatedAt: new Date().toISOString() });
+    success = true;
+  } catch (err) {
+    console.warn('Erro ao atualizar status do check-in no Firestore, tentando setDoc com merge:', err);
+    try {
+      await setDoc(doc(CHECKINS_COL, checkInId), { status, moderatedAt: new Date().toISOString() }, { merge: true });
+      success = true;
+    } catch (e) {
+      console.error('Falha ao atualizar status no Firestore:', e);
+    }
+  }
+
+  // 2. Update on Express server
+  try {
+    const res = await fetch(`/api/curator/checkins/${checkInId}/moderate`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) success = true;
+  } catch (err) {
+    console.error('Erro ao sincronizar moderação com servidor:', err);
+  }
+
+  return success;
+};
+
+export const deleteCheckInByCuratorAsync = async (checkInId: string): Promise<boolean> => {
+  let success = false;
+  try {
+    await deleteDoc(doc(CHECKINS_COL, checkInId));
+    success = true;
+  } catch (err) {
+    console.warn('Erro ao deletar checkin do Firestore:', err);
+  }
+
+  try {
+    const res = await fetch(`/api/checkins/${checkInId}`, { method: 'DELETE' });
+    if (res.ok) success = true;
+  } catch (err) {
+    console.error('Erro ao deletar checkin do servidor:', err);
+  }
+
+  return success;
+};
+
+export const fetchCuratorUsersAsync = async (): Promise<CuratorUser[]> => {
+  try {
+    const res = await fetch('/api/curator/users');
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+  } catch (err) {
+    console.error('Erro ao buscar lista de usuários para curadoria:', err);
+  }
+  return [];
+};
+
+export const fetchBannedIpsAsync = async (): Promise<BannedIpRecord[]> => {
+  try {
+    const res = await fetch('/api/curator/banned-ips');
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+  } catch (err) {
+    console.error('Erro ao buscar IPs banidos:', err);
+  }
+  return [];
+};
+
+export const banIpAsync = async (
+  ip: string,
+  reason?: string,
+  userId?: string,
+  userEmail?: string
+): Promise<BannedIpRecord[]> => {
+  try {
+    const res = await fetch('/api/curator/ban-ip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ip, reason, userId, userEmail }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.banned || [];
+    }
+  } catch (err) {
+    console.error('Erro ao banir IP:', err);
+  }
+  return [];
+};
+
+export const unbanIpAsync = async (ip: string): Promise<BannedIpRecord[]> => {
+  try {
+    const res = await fetch('/api/curator/unban-ip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ip }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.banned || [];
+    }
+  } catch (err) {
+    console.error('Erro ao desbanir IP:', err);
+  }
+  return [];
+};
+

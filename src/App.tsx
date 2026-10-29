@@ -52,8 +52,14 @@ import { SiteDisclaimer } from './components/SiteDisclaimer';
 import { AuthModal } from './components/AuthModal';
 import { PassportModal } from './components/PassportModal';
 import { CheckInModal } from './components/CheckInModal';
+import { CuratorPanelModal } from './components/CuratorPanelModal';
 
-import { subscribeToAuth, subscribeToUserCheckIns } from './services/passport';
+import { 
+  subscribeToAuth, 
+  subscribeToUserCheckIns, 
+  recordUserHeartbeat, 
+  fetchAllCheckInsForCuratorAsync 
+} from './services/passport';
 import { UserProfile, CheckIn } from './types';
 import { CATEGORIES } from './utils/categories';
 
@@ -94,6 +100,8 @@ export default function App() {
   });
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+  const [isCuratorPanelOpen, setIsCuratorPanelOpen] = useState(false);
+  const [pendingRelatosCount, setPendingRelatosCount] = useState(0);
   const [adminPin, setAdminPinState] = useState(getAdminPin());
   
 
@@ -143,10 +151,24 @@ export default function App() {
   // Live version checking state
   const [hasNewVersion, setHasNewVersion] = useState(false);
   const [initialVersion, setInitialVersion] = useState<number | null>(null);
+  const [bannedIpNotice, setBannedIpNotice] = useState<{ ip: string; reason?: string } | null>(null);
 
-  // Poll /api/version to detect new site deployments
+  // Check IP status and poll /api/version to detect new site deployments
   useEffect(() => {
     let isMounted = true;
+
+    // Check IP ban status
+    fetch('/api/ip/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (isMounted && data && data.isBanned) {
+          setBannedIpNotice({
+            ip: data.ip,
+            reason: data.record?.reason || 'Violação das diretrizes e termos de convivência da rede.',
+          });
+        }
+      })
+      .catch(() => {});
 
     const checkVersion = async () => {
       try {
@@ -211,6 +233,7 @@ export default function App() {
       if (isMounted) {
         setCurrentUser(usr);
         if (usr) {
+          recordUserHeartbeat(usr);
           unsubscribeCheckIns();
           unsubscribeCheckIns = subscribeToUserCheckIns(usr.uid, (cItems) => {
             if (isMounted && Array.isArray(cItems)) {
@@ -230,6 +253,21 @@ export default function App() {
       unsubscribeCheckIns();
     };
   }, []);
+
+  // Real-time / periodic count of pending check-ins for curator
+  useEffect(() => {
+    let isMounted = true;
+    if (isAdmin) {
+      fetchAllCheckInsForCuratorAsync().then((items) => {
+        if (isMounted && Array.isArray(items)) {
+          setPendingRelatosCount(items.filter((c) => c.status === 'pending').length);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdmin, userCheckIns, isCuratorPanelOpen]);
 
 
   // Volunteer Handlers
@@ -429,6 +467,21 @@ export default function App() {
         </div>
       )}
 
+      {/* Banned IP Notice */}
+      {bannedIpNotice && (
+        <div
+          role="alert"
+          className="bg-neutral-900 text-rose-200 py-2.5 px-4 text-xs text-center border-b border-rose-900 z-50 flex items-center justify-center gap-2 flex-wrap"
+        >
+          <span className="font-bold text-white uppercase tracking-wider bg-rose-900 px-2 py-0.5 rounded text-[10px]">
+            Aviso de Suspensão de IP
+          </span>
+          <span>
+            Seu endereço IP ({bannedIpNotice.ip}) foi suspenso da rede por: <strong>{bannedIpNotice.reason}</strong>
+          </span>
+        </div>
+      )}
+
       {/* Clean Minimalist Header */}
       <Header
         onOpenRegister={() => {
@@ -458,6 +511,8 @@ export default function App() {
         pendingVolunteerCount={volunteers.filter((v) => v.status === 'pending').length}
         onOpenPassport={() => setIsPassportModalOpen(true)}
         passportStampCount={new Set(userCheckIns.map((c) => c.establishmentId)).size}
+        onOpenCuratorPanel={() => setIsCuratorPanelOpen(true)}
+        pendingRelatosCount={pendingRelatosCount}
       />
 
 
@@ -985,6 +1040,13 @@ export default function App() {
         }}
       />
 
+      {/* Curator Panel Modal (Stories/Reviews Moderation, Companions & IP Ban Management) */}
+      <CuratorPanelModal
+        isOpen={isCuratorPanelOpen}
+        onClose={() => setIsCuratorPanelOpen(false)}
+        establishments={establishments}
+        onShowToast={showToast}
+      />
 
       {/* Admin / Curator Login Modal */}
       <AdminLoginModal

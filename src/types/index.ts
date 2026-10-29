@@ -101,19 +101,43 @@ export interface CheckIn {
   id: string;
   userId: string;
   userEmail?: string;
+  authorName?: string;
+  authorIp?: string;
   establishmentId: string;
   visitDate: string;
   experienceNote: string;
   photoUrl?: string;
   photoUrls?: string[];
   createdAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  establishmentName?: string;
+  establishmentCity?: string;
+  establishmentState?: string;
 }
-
 
 export interface UserProfile {
   uid: string;
   email: string | null;
   displayName?: string | null;
+}
+
+export interface CuratorUser {
+  uid: string;
+  email: string | null;
+  displayName?: string | null;
+  ipAddress?: string;
+  lastActive: string;
+  createdAt: string;
+  checkInsCount: number;
+  isBanned?: boolean;
+}
+
+export interface BannedIpRecord {
+  ip: string;
+  reason?: string;
+  bannedAt: string;
+  userId?: string;
+  userEmail?: string;
 }
 
 
