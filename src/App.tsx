@@ -55,6 +55,7 @@ import { CheckInModal } from './components/CheckInModal';
 import { CuratorPanelModal } from './components/CuratorPanelModal';
 import { MySpacesView } from './components/MySpacesView';
 import { OwnerEditModal } from './components/OwnerEditModal';
+import { OnboardingModal } from './components/OnboardingModal';
 
 import { 
   subscribeToAuth, 
@@ -86,8 +87,18 @@ export default function App() {
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [targetEstablishmentForCheckIn, setTargetEstablishmentForCheckIn] = useState<Establishment | null>(null);
 
+  // Onboarding Welcome Modal State
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
-  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const completed = localStorage.getItem('sabor_luta_onboarding_completed');
+      if (!completed) {
+        setIsOnboardingOpen(true);
+      }
+    }
+  }, []);
+
   // Registration Form State
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Establishment | null>(null);
@@ -532,6 +543,7 @@ export default function App() {
         passportStampCount={new Set(userCheckIns.map((c) => c.establishmentId)).size}
         onOpenCuratorPanel={() => setIsCuratorPanelOpen(true)}
         pendingRelatosCount={pendingRelatosCount}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
       />
 
 
@@ -1190,6 +1202,31 @@ export default function App() {
         onRequestAuth={() => {
           setAuthPurpose('passport');
           setIsAuthModalOpen(true);
+        }}
+      />
+
+      {/* Onboarding Welcome Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('sabor_luta_onboarding_completed', 'true');
+          }
+          setIsOnboardingOpen(false);
+        }}
+        onOpenRegister={() => {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('sabor_luta_onboarding_completed', 'true');
+          }
+          setIsOnboardingOpen(false);
+          handleOpenRegister();
+        }}
+        onOpenPassport={() => {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('sabor_luta_onboarding_completed', 'true');
+          }
+          setIsOnboardingOpen(false);
+          setIsPassportModalOpen(true);
         }}
       />
 

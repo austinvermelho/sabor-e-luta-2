@@ -12,7 +12,8 @@ import {
   Users,
   Stamp,
   MessageSquare,
-  Store
+  Store,
+  HelpCircle
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -32,6 +33,7 @@ interface HeaderProps {
   passportStampCount?: number;
   onOpenCuratorPanel?: () => void;
   pendingRelatosCount?: number;
+  onOpenOnboarding?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -51,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   passportStampCount = 0,
   onOpenCuratorPanel,
   pendingRelatosCount = 0,
+  onOpenOnboarding,
 }) => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -215,6 +218,18 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Right Actions: Passaporte + Volunteer CTA + Register Button + Mobile Menu Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
+            {/* Como Funciona / Onboarding CTA */}
+            {onOpenOnboarding && (
+              <button
+                onClick={onOpenOnboarding}
+                className="hidden xl:inline-flex items-center gap-1.5 bg-[#f3ede2] hover:bg-[#ebe2d3] text-stone-800 border border-[#e4dcce] text-xs font-bold px-2.5 py-1.5 sm:py-2 rounded-lg transition-all cursor-pointer shadow-2xs shrink-0"
+                title="Conheça o propósito e funcionamento do Sabor & Luta"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-[#b91c1c] shrink-0" aria-hidden="true" />
+                <span>Como Funciona</span>
+              </button>
+            )}
+
             {/* Passaporte Sabor & Luta CTA */}
             {onOpenPassport && (
               <button
@@ -459,6 +474,23 @@ export const Header: React.FC<HeaderProps> = ({
                     {passportStampCount} selos
                   </span>
                 )}
+              </button>
+            )}
+
+            {/* Como Funciona Onboarding Shortcut in Mobile Menu */}
+            {onOpenOnboarding && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenOnboarding();
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 text-xs font-bold transition-all text-left cursor-pointer min-h-[44px]"
+              >
+                <div className="flex items-center gap-2.5">
+                  <HelpCircle className="w-4 h-4 text-[#b91c1c] shrink-0" />
+                  <span>Como Funciona o Guia Sabor &amp; Luta?</span>
+                </div>
+                <span className="text-[10px] text-[#b91c1c] uppercase font-extrabold">Apresentação</span>
               </button>
             )}
 

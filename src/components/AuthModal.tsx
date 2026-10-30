@@ -88,8 +88,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       <div className="relative w-full max-w-md bg-stone-50 border-2 border-red-900/30 rounded-2xl shadow-2xl overflow-hidden my-8">
         
         {/* Purpose Indicator Badge */}
-        <div className="bg-stone-900 text-stone-200 text-[11px] font-bold px-4 py-1.5 flex items-center justify-between border-b border-stone-800">
-          <span className="flex items-center gap-1.5 uppercase tracking-wider text-[#fbc02d]">
+        <div className="bg-stone-900 text-stone-200 text-[10px] sm:text-[11px] font-bold px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 border-b border-stone-800">
+          <span className="flex items-center gap-1.5 uppercase tracking-wider text-[#fbc02d] shrink-0">
             {isEstablishmentMode ? (
               <>
                 <Store className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -102,7 +102,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </>
             )}
           </span>
-          <span className="text-[10px] text-stone-400 font-normal">Uma única conta dá acesso a tudo</span>
+          <span className="text-[10px] text-stone-400 font-normal leading-tight">
+            Uma única conta dá acesso a tudo
+          </span>
         </div>
 
         {/* Header Banner with Specific Purpose Styling */}

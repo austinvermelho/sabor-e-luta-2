@@ -1,6 +1,6 @@
 {
-  "summary":  "Plano de implementação para o sistema de atribuição de usuários como responsáveis de estabelecimentos, aba 'Meus Espaços' no menu principal, controle de acesso restrito (sem poder sobre os comentários do passaporte) e fluxo de re-aprovação de edições pela curadoria.",
-  "updatedAt":  "2026-10-29T23:04:53.467201924Z",
+  "summary":  "Plano de implementação para o Modal de Boas-Vindas (Onboarding) do Sabor & Luta e ajuste fino de responsividade mobile do AuthModal header.",
+  "updatedAt":  "2026-10-30T05:45:18.657992279Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
