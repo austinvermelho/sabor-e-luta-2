@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, MapPin, Check, AlertCircle, Sparkles, LocateFixed, Loader2 } from 'lucide-react';
-import { Establishment, CategoryType, OperatingHours } from '../types';
+import { X, Search, MapPin, Check, AlertCircle, Sparkles, LocateFixed, Loader2, Lock } from 'lucide-react';
+import { Establishment, CategoryType, OperatingHours, UserProfile } from '../types';
 import { CATEGORIES, POPULAR_TAGS } from '../utils/categories';
 import { OperatingHoursSelector } from './OperatingHoursSelector';
 import { searchAddressCoordinates } from '../services/geocoding';
@@ -13,6 +13,8 @@ interface RegistrationModalProps {
   onStartPickOnMap?: () => void;
   pickedCoordinates?: { lat: number; lng: number } | null;
   isAdmin?: boolean;
+  currentUser?: UserProfile | null;
+  onRequestAuth?: () => void;
 }
 
 const BRAZILIAN_STATES = [
@@ -29,6 +31,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   onStartPickOnMap,
   pickedCoordinates,
   isAdmin = false,
+  currentUser,
+  onRequestAuth,
 }) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<CategoryType>('bar_popular');
@@ -127,6 +131,52 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   }, [pickedCoordinates]);
 
   if (!isOpen) return null;
+
+  if (!currentUser && !isAdmin) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-stone-50 border-2 border-[#b91c1c]/40 rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-full transition-colors"
+            title="Fechar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          <div className="w-12 h-12 bg-red-100 text-[#b91c1c] rounded-full flex items-center justify-center mx-auto border border-red-200">
+            <Lock className="w-6 h-6" />
+          </div>
+
+          <h3 className="font-serif text-xl font-bold text-stone-900">
+            Identificação Necessária
+          </h3>
+
+          <p className="text-xs text-stone-600 leading-relaxed">
+            Para cadastrar um novo estabelecimento no guia <strong>Sabor &amp; Luta</strong>, você precisa estar conectado à sua conta de Companheiro(a).
+          </p>
+
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                onRequestAuth?.();
+              }}
+              className="w-full py-2.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs font-bold rounded-xl transition-colors shadow-sm cursor-pointer"
+            >
+              Entrar ou Criar Conta de Companheiro(a)
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const toggleTag = (tag: string) => {
     if (tags.includes(tag)) {

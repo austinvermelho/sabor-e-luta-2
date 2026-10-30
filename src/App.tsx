@@ -81,6 +81,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [userCheckIns, setUserCheckIns] = useState<CheckIn[]>([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authPurpose, setAuthPurpose] = useState<'passport' | 'establishment'>('passport');
   const [isPassportModalOpen, setIsPassportModalOpen] = useState(false);
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [targetEstablishmentForCheckIn, setTargetEstablishmentForCheckIn] = useState<Establishment | null>(null);
@@ -438,6 +439,21 @@ export default function App() {
     }
   };
 
+  // Registration Flow Guard (Exige conta cadastrada antes de publicar novo espaço)
+  const [pendingRegisterAfterAuth, setPendingRegisterAfterAuth] = useState(false);
+
+  const handleOpenRegister = () => {
+    if (!currentUser && !isAdmin) {
+      setPendingRegisterAfterAuth(true);
+      setAuthPurpose('establishment');
+      showToast('Para cadastrar um espaço, faça login ou crie sua conta.');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setEditingItem(null);
+    setIsRegisterOpen(true);
+  };
+
   const resetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
@@ -490,10 +506,7 @@ export default function App() {
 
       {/* Clean Minimalist Header */}
       <Header
-        onOpenRegister={() => {
-          setEditingItem(null);
-          setIsRegisterOpen(true);
-        }}
+        onOpenRegister={handleOpenRegister}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         count={approvedEstablishments.length}
@@ -540,10 +553,7 @@ export default function App() {
         
         {/* Top Site Explanation Disclaimer */}
         <SiteDisclaimer
-          onOpenRegister={() => {
-            setEditingItem(null);
-            setIsRegisterOpen(true);
-          }}
+          onOpenRegister={handleOpenRegister}
           onOpenMission={() => {
             setActiveTab('mission');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -620,10 +630,7 @@ export default function App() {
         {/* Dedicated Mission Section View */}
         {activeTab === 'mission' ? (
           <MissionSection
-            onOpenRegister={() => {
-              setEditingItem(null);
-              setIsRegisterOpen(true);
-            }}
+            onOpenRegister={handleOpenRegister}
             onExploreMap={() => {
               setActiveTab('all');
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -635,11 +642,11 @@ export default function App() {
           <MySpacesView
             user={currentUser}
             establishments={establishments}
-            onRequestAuth={() => setIsAuthModalOpen(true)}
-            onOpenRegister={() => {
-              setEditingItem(null);
-              setIsRegisterOpen(true);
+            onRequestAuth={() => {
+              setAuthPurpose('establishment');
+              setIsAuthModalOpen(true);
             }}
+            onOpenRegister={handleOpenRegister}
             onOpenEdit={(item) => {
               setOwnerEditingItem(item);
               setIsOwnerEditOpen(true);
@@ -772,10 +779,7 @@ export default function App() {
         {/* Empty State when no approved establishments exist */}
         {approvedEstablishments.length === 0 ? (
           <EmptyState
-            onOpenRegister={() => {
-              setEditingItem(null);
-              setIsRegisterOpen(true);
-            }}
+            onOpenRegister={handleOpenRegister}
           />
         ) : (
           <>
@@ -790,11 +794,8 @@ export default function App() {
                       Exibindo <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-100/80 text-rose-900 font-bold text-[11px]">{filteredEstablishments.length}</span> de {approvedEstablishments.length} locais
                     </span>
                     <button
-                      onClick={() => {
-                        setEditingItem(null);
-                        setIsRegisterOpen(true);
-                      }}
-                      className="text-[#d32f2f] hover:text-[#b71c1c] hover:underline font-semibold flex items-center gap-1"
+                      onClick={handleOpenRegister}
+                      className="text-[#d32f2f] hover:text-[#b71c1c] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Cadastrar Espaço</span>
@@ -1075,6 +1076,13 @@ export default function App() {
         onStartPickOnMap={handleStartPickOnMap}
         pickedCoordinates={pickedCoordinates}
         isAdmin={isAdmin}
+        currentUser={currentUser}
+        onRequestAuth={() => {
+          setIsRegisterOpen(false);
+          setPendingRegisterAfterAuth(true);
+          setAuthPurpose('establishment');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* Pending Moderation Queue Modal (Admin Only) */}
@@ -1137,10 +1145,20 @@ export default function App() {
       {/* Auth Modal (Email / Password) */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        authPurpose={authPurpose}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          setPendingRegisterAfterAuth(false);
+        }}
+        noticeMessage={pendingRegisterAfterAuth ? 'Para cadastrar um novo espaço no guia Sabor & Luta, você precisa estar conectado à sua conta. Faça login ou crie sua conta abaixo!' : undefined}
         onSuccess={(usr) => {
           setCurrentUser(usr);
-          showToast('Conectado ao seu Passaporte!');
+          showToast('Conectado com sucesso!');
+          if (pendingRegisterAfterAuth) {
+            setPendingRegisterAfterAuth(false);
+            setEditingItem(null);
+            setIsRegisterOpen(true);
+          }
         }}
       />
 
@@ -1155,7 +1173,10 @@ export default function App() {
           setTargetEstablishmentForCheckIn(item);
           setIsCheckInModalOpen(true);
         }}
-        onRequestAuth={() => setIsAuthModalOpen(true)}
+        onRequestAuth={() => {
+          setAuthPurpose('passport');
+          setIsAuthModalOpen(true);
+        }}
         onUpdateCheckIns={(updated) => setUserCheckIns(updated)}
       />
 
@@ -1172,7 +1193,10 @@ export default function App() {
           setUserCheckIns(updated);
           showToast('Carimbo registrado com sucesso!');
         }}
-        onRequestAuth={() => setIsAuthModalOpen(true)}
+        onRequestAuth={() => {
+          setAuthPurpose('passport');
+          setIsAuthModalOpen(true);
+        }}
       />
 
     </div>

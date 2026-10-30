@@ -27,8 +27,28 @@ import {
   UserCheck,
   FileText,
   ArrowRight,
-  UserMinus
+  UserMinus,
+  BarChart2,
+  TrendingUp,
+  Stamp as StampIcon,
+  Award,
+  Layers
 } from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  AreaChart, 
+  Area, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Legend 
+} from 'recharts';
 import { CheckIn, CuratorUser, BannedIpRecord, Establishment } from '../types';
 import { 
   fetchAllCheckInsForCuratorAsync, 
@@ -45,6 +65,7 @@ import {
   manageEstablishmentClaimAsync 
 } from '../services/storage';
 import { containsInappropriateContent } from '../utils/moderation';
+import { CATEGORIES } from '../utils/categories';
 import { ImageLightbox } from './ImageLightbox';
 
 interface CuratorPanelModalProps {
@@ -62,7 +83,7 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
   onUpdateEstablishments,
   onShowToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'relatos' | 'users' | 'banned' | 'edits'>('relatos');
+  const [activeTab, setActiveTab] = useState<'relatos' | 'users' | 'banned' | 'edits' | 'stats'>('relatos');
   
   // Data states
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
@@ -398,6 +419,99 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
     return '';
   };
 
+  // --- STATS COMPUTATIONS (Recharts Data) ---
+  
+  // 1. Establishments by State
+  const stateData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    establishments.forEach((e) => {
+      const st = (e.state || 'Outros').toUpperCase().trim();
+      counts[st] = (counts[st] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([state, count]) => ({ state, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [establishments]);
+
+  // 2. Monthly Growth of Establishment Registrations
+  const monthlyGrowthData = useMemo(() => {
+    const monthMap: Record<string, number> = {};
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    establishments.forEach((e) => {
+      let d = e.createdAt ? new Date(e.createdAt) : new Date();
+      if (isNaN(d.getTime())) d = new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthMap[key] = (monthMap[key] || 0) + 1;
+    });
+
+    const sortedKeys = Object.keys(monthMap).sort();
+    let cumulativo = 0;
+
+    return sortedKeys.map((key) => {
+      const [year, month] = key.split('-');
+      const label = `${monthNames[parseInt(month, 10) - 1]}/${year.substring(2)}`;
+      const novos = monthMap[key];
+      cumulativo += novos;
+      return {
+        monthKey: key,
+        monthLabel: label,
+        novos,
+        cumulativo,
+      };
+    });
+  }, [establishments]);
+
+  // 3. Stamp / Check-In Volume over time
+  const monthlyStampsData = useMemo(() => {
+    const monthMap: Record<string, { total: number; aprovados: number }> = {};
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    checkIns.forEach((c) => {
+      let d = c.createdAt ? new Date(c.createdAt) : c.visitDate ? new Date(c.visitDate) : new Date();
+      if (isNaN(d.getTime())) d = new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthMap[key]) {
+        monthMap[key] = { total: 0, aprovados: 0 };
+      }
+      monthMap[key].total += 1;
+      if (c.status === 'approved') {
+        monthMap[key].aprovados += 1;
+      }
+    });
+
+    const sortedKeys = Object.keys(monthMap).sort();
+    return sortedKeys.map((key) => {
+      const [year, month] = key.split('-');
+      const label = `${monthNames[parseInt(month, 10) - 1]}/${year.substring(2)}`;
+      return {
+        monthLabel: label,
+        total: monthMap[key].total,
+        aprovados: monthMap[key].aprovados,
+      };
+    });
+  }, [checkIns]);
+
+  // 4. Distribution by Category
+  const categoryDistributionData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    establishments.forEach((e) => {
+      const cat = e.category || 'outros';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+
+    const colors = ['#b91c1c', '#d97706', '#059669', '#2563eb', '#7c3aed', '#db2777', '#475569'];
+
+    return Object.entries(counts).map(([catId, count], i) => {
+      const info = CATEGORIES[catId as keyof typeof CATEGORIES];
+      return {
+        name: info ? info.shortLabel : catId,
+        value: count,
+        color: colors[i % colors.length],
+      };
+    });
+  }, [establishments]);
+
   if (!isOpen) return null;
 
   return (
@@ -504,6 +618,18 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
                     {totalPendingSpaceActions}
                   </span>
                 )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('stats')}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'stats'
+                    ? 'bg-neutral-900 text-white shadow-xs'
+                    : 'bg-white/80 text-stone-700 hover:bg-white'
+                }`}
+              >
+                <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Estatísticas da Rede</span>
               </button>
             </div>
           </div>
@@ -1017,7 +1143,8 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
                   </div>
                 ) : (
                   <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-2xs">
-                    <table className="w-full text-left text-xs text-stone-700">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-stone-700 min-w-[600px]">
                       <thead className="bg-[#fbf8f3] border-b border-stone-200 text-[11px] font-bold uppercase tracking-wider text-stone-600">
                         <tr>
                           <th className="py-3 px-4">Endereço IP</th>
@@ -1057,7 +1184,8 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
                       </tbody>
                     </table>
                   </div>
-                )}
+                </div>
+              )}
               </div>
             )}
 
@@ -1405,6 +1533,240 @@ export const CuratorPanelModal: React.FC<CuratorPanelModalProps> = ({
                       </table>
                     </div>
                   </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* TAB 5: ESTATÍSTICAS DA REDE (GRÁFICOS RECHARTS) */}
+            {activeTab === 'stats' && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                
+                {/* 1. Key Performance Indicators (KPI Cards) */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
+                      <span>Total de Espaços</span>
+                      <Store className="w-4 h-4 text-[#b91c1c]" />
+                    </div>
+                    <div className="font-serif text-2xl font-bold text-neutral-900">
+                      {establishments.length}
+                    </div>
+                    <div className="text-[11px] text-stone-500">
+                      <span className="text-emerald-700 font-bold">{establishments.filter(e => e.status === 'approved').length} no ar</span>
+                      {establishments.filter(e => e.status === 'pending').length > 0 && (
+                        <span className="ml-1 text-amber-700 font-bold">({establishments.filter(e => e.status === 'pending').length} pendentes)</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
+                      <span>Volume de Carimbos</span>
+                      <StampIcon className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div className="font-serif text-2xl font-bold text-neutral-900">
+                      {checkIns.length}
+                    </div>
+                    <div className="text-[11px] text-stone-500">
+                      <span className="text-emerald-700 font-bold">{checkIns.filter(c => c.status === 'approved').length} validados</span> no passaporte
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
+                      <span>Companheiros</span>
+                      <Users className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="font-serif text-2xl font-bold text-neutral-900">
+                      {users.length}
+                    </div>
+                    <div className="text-[11px] text-stone-500">
+                      Ativos no ecossistema
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs space-y-1">
+                    <div className="flex items-center justify-between text-stone-500 text-xs font-semibold">
+                      <span>Alcance Territorial</span>
+                      <MapPin className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="font-serif text-2xl font-bold text-neutral-900">
+                      {stateData.length} {stateData.length === 1 ? 'Estado' : 'Estados'}
+                    </div>
+                    <div className="text-[11px] text-stone-500">
+                      {Array.from(new Set(establishments.map(e => e.city))).length} cidades mapeadas
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Charts Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  
+                  {/* Chart 1: Estabelecimentos por Estado */}
+                  <div className="bg-white p-4 sm:p-5 rounded-xl border border-stone-200 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+                      <div>
+                        <h4 className="font-serif text-sm font-bold text-neutral-900 flex items-center gap-2">
+                          <Store className="w-4 h-4 text-[#b91c1c]" />
+                          <span>Estabelecimentos por Estado</span>
+                        </h4>
+                        <p className="text-[11px] text-stone-500">Distribuição geográfica dos locais cadastrados</p>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-stone-100 text-stone-700 px-2 py-0.5 rounded">
+                        {stateData.length} estados
+                      </span>
+                    </div>
+
+                    <div className="h-64 w-full pt-2">
+                      {stateData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-xs text-stone-400">Sem dados cadastrados</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={stateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0ece1" />
+                            <XAxis dataKey="state" tick={{ fontSize: 11, fill: '#57534e' }} axisLine={false} tickLine={false} />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#57534e' }} axisLine={false} tickLine={false} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
+                              itemStyle={{ color: '#fef08a' }}
+                              formatter={(value: any) => [`${value} locais`, 'Quantidade']}
+                            />
+                            <Bar dataKey="count" fill="#b91c1c" radius={[6, 6, 0, 0]} barSize={36} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Chart 2: Crescimento Mensal de Cadastros */}
+                  <div className="bg-white p-4 sm:p-5 rounded-xl border border-stone-200 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+                      <div>
+                        <h4 className="font-serif text-sm font-bold text-neutral-900 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-700" />
+                          <span>Crescimento Mensal de Cadastros</span>
+                        </h4>
+                        <p className="text-[11px] text-stone-500">Novos espaços e total acumulado no tempo</p>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                        {establishments.length} total
+                      </span>
+                    </div>
+
+                    <div className="h-64 w-full pt-2">
+                      {monthlyGrowthData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-xs text-stone-400">Sem histórico mensal suficiente</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={monthlyGrowthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="colorAcumulado" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#b91c1c" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#b91c1c" stopOpacity={0.0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0ece1" />
+                            <XAxis dataKey="monthLabel" tick={{ fontSize: 11, fill: '#57534e' }} axisLine={false} tickLine={false} />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#57534e' }} axisLine={false} tickLine={false} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
+                              formatter={(value: any, name: any) => [value, name === 'cumulativo' ? 'Total Acumulado' : 'Novos no Mês']}
+                            />
+                            <Area type="monotone" dataKey="cumulativo" stroke="#b91c1c" strokeWidth={2.5} fillOpacity={1} fill="url(#colorAcumulado)" />
+                            <Bar dataKey="novos" fill="#d97706" radius={[4, 4, 0, 0]} barSize={20} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Chart 3: Volume Total de Carimbos no Passaporte */}
+                  <div className="bg-white p-4 sm:p-5 rounded-xl border border-stone-200 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+                      <div>
+                        <h4 className="font-serif text-sm font-bold text-neutral-900 flex items-center gap-2">
+                          <StampIcon className="w-4 h-4 text-amber-600" />
+                          <span>Volume Total de Carimbos no Passaporte</span>
+                        </h4>
+                        <p className="text-[11px] text-stone-500">Histórico de relatos e visitas registradas</p>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-amber-50 text-amber-900 px-2 py-0.5 rounded border border-amber-200">
+                        {checkIns.length} carimbos
+                      </span>
+                    </div>
+
+                    <div className="h-64 w-full pt-2">
+                      {monthlyStampsData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-xs text-stone-400">Nenhum carimbo registrado até o momento</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={monthlyStampsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0ece1" />
+                            <XAxis dataKey="monthLabel" tick={{ fontSize: 11, fill: '#57534e' }} axisLine={false} tickLine={false} />
+                            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#57534e' }} axisLine={false} tickLine={false} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
+                              formatter={(value: any, name: any) => [value, name === 'aprovados' ? 'Aprovados' : 'Total Submetido']}
+                            />
+                            <Bar dataKey="total" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={24} name="total" />
+                            <Bar dataKey="aprovados" fill="#059669" radius={[4, 4, 0, 0]} barSize={24} name="aprovados" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Chart 4: Distribuição por Categoria de Espaço */}
+                  <div className="bg-white p-4 sm:p-5 rounded-xl border border-stone-200 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+                      <div>
+                        <h4 className="font-serif text-sm font-bold text-neutral-900 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-purple-600" />
+                          <span>Distribuição por Categoria</span>
+                        </h4>
+                        <p className="text-[11px] text-stone-500">Proporção de tipos de espaços na rede</p>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold bg-stone-100 text-stone-700 px-2 py-0.5 rounded">
+                        {categoryDistributionData.length} categorias
+                      </span>
+                    </div>
+
+                    <div className="h-64 w-full flex items-center justify-center pt-2">
+                      {categoryDistributionData.length === 0 ? (
+                        <div className="text-xs text-stone-400">Sem categorias registradas</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={categoryDistributionData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={85}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {categoryDistributionData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1c1917', borderRadius: '12px', color: '#fff', fontSize: '12px', border: 'none' }}
+                              formatter={(value: any, name: any) => [`${value} locais`, name]}
+                            />
+                            <Legend
+                              layout="horizontal"
+                              verticalAlign="bottom"
+                              align="center"
+                              wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
 
               </div>
