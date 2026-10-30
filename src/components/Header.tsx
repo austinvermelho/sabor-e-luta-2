@@ -222,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
             {onOpenOnboarding && (
               <button
                 onClick={onOpenOnboarding}
-                className="hidden xl:inline-flex items-center gap-1.5 bg-[#f3ede2] hover:bg-[#ebe2d3] text-stone-800 border border-[#e4dcce] text-xs font-bold px-2.5 py-1.5 sm:py-2 rounded-lg transition-all cursor-pointer shadow-2xs shrink-0"
+                className="hidden sm:inline-flex items-center gap-1.5 bg-[#f3ede2] hover:bg-[#ebe2d3] text-stone-800 border border-[#e4dcce] text-xs font-bold px-2.5 py-1.5 sm:py-2 rounded-lg transition-all cursor-pointer shadow-2xs shrink-0"
                 title="Conheça o propósito e funcionamento do Sabor & Luta"
               >
                 <HelpCircle className="w-3.5 h-3.5 text-[#b91c1c] shrink-0" aria-hidden="true" />
@@ -258,16 +258,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Seja Voluntário(a)</span>
               </button>
             )}
-
-            {/* Direct Cadastrar Espaço Button */}
-            <button
-              onClick={onOpenRegister}
-              className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#b91c1c] hover:bg-[#991b1b] text-white text-xs sm:text-sm font-semibold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-xs active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-amber-300 cursor-pointer shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5] shrink-0" aria-hidden="true" />
-              <span className="hidden sm:inline">Cadastrar Espaço</span>
-              <span className="sm:hidden">Cadastrar</span>
-            </button>
 
             {/* Mobile Menu Hamburger Button */}
             <button
