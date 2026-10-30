@@ -13,7 +13,7 @@ interface VolunteerListModalProps {
 
 const SKILL_LABELS: Record<VolunteerSkill, { label: string; icon: string }> = {
   curadoria: { label: 'Curadoria', icon: '📍' },
-  design: { label: 'Design', icon: '🎨' },
+  design: { label: 'Design & Vídeo', icon: '🎨' },
   dev: { label: 'Desenvolvimento', icon: '💻' },
   agroecologia: { label: 'Agroecologia', icon: '🌾' },
   comunicacao: { label: 'Comunicação', icon: '📣' },

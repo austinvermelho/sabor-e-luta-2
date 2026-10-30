@@ -10,7 +10,7 @@ interface VolunteerModalProps {
 
 const SKILL_OPTIONS: { id: VolunteerSkill; label: string; icon: string; description: string }[] = [
   { id: 'curadoria', label: 'Curadoria de Espaços', icon: '📍', description: 'Revisar cadastros, verificar informações de locais e contatar proprietários.' },
-  { id: 'design', label: 'Design & Panfletagem', icon: '🎨', description: 'Criar artes, cartazes virtuais, zines e identidade visual no estilo xilogravura.' },
+  { id: 'design', label: 'Design & Vídeo', icon: '🎨', description: 'Criar artes, vídeos curtos, vinhetas, cartazes virtuais e conteúdo audiovisual.' },
   { id: 'dev', label: 'Desenvolvimento Web', icon: '💻', description: 'Manter a plataforma aberta, otimizar mapas e criar ferramentas livres.' },
   { id: 'agroecologia', label: 'Agroecologia & Campo', icon: '🌾', description: 'Mapear hortas comunitárias, feiras orgânicas e cooperativas de produtores.' },
   { id: 'comunicacao', label: 'Comunicação & Redes', icon: '📣', description: 'Gerenciar redes sociais, escrever artigos e fortalecer a divulgação.' },
