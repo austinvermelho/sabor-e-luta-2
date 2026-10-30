@@ -887,11 +887,8 @@ export default function App() {
                       Mostrando <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-100/80 text-rose-900 font-bold text-[11px]">{filteredEstablishments.length}</span> estabelecimentos
                     </span>
                     <button
-                      onClick={() => {
-                        setEditingItem(null);
-                        setIsRegisterOpen(true);
-                      }}
-                      className="text-[#d32f2f] hover:text-[#b71c1c] hover:underline font-semibold flex items-center gap-1"
+                      onClick={handleOpenRegister}
+                      className="text-[#d32f2f] hover:text-[#b71c1c] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Cadastrar Novo Espaço</span>
@@ -966,10 +963,7 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => {
-                setEditingItem(null);
-                setIsRegisterOpen(true);
-              }}
+              onClick={handleOpenRegister}
               className="hover:text-[#b91c1c] font-semibold transition-colors cursor-pointer"
             >
               Cadastrar Espaço
